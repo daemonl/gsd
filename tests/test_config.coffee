@@ -58,7 +58,7 @@ config = {
     groupTable: 'tenant'
     sessionTable: 'session'
     siteSecret: "Not Secret Yet"
-
+    sessionCookie: "gsd_session"
   }
   port: 8080
 }
