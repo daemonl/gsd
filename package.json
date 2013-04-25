@@ -1,0 +1,23 @@
+{
+  "name": "gsd",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "coffee app.coffee"
+  },
+  "main": "./app.coffee",
+  "dependencies": {
+    "connect": "*",
+
+    "less-middleware": "*",
+    "swig": "0.13.2",
+    "consolidate": "*",
+    "cookie-signature": "0.0.1",
+    "cookie": "0.0.5",
+    "socket.io": "*",
+    "nunjucks": "*",
+    "node-promise": "*",
+    "mysql": "*",
+    "moment": "*"
+  }
+}
