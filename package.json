@@ -3,9 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "coffee app.coffee"
+    "start": "coffee app.coffee",
+    "test": "jasmine-node --coffee tests/test.coffee"
   },
-  "main": "./app.coffee",
+  "main": "./lib/app.coffee",
   "dependencies": {
     "connect": "*",
 
