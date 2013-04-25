@@ -1,4 +1,3 @@
-
 class GroupSession
 
   activeUsers: {}
@@ -11,7 +10,7 @@ class GroupSession
     @activeUsers[user.serialized._id] = user
 
   getQuery: (user, path)=>
-
+    # match table[id]
     exp = /([a-zA-Z_][a-zA-Z0-9_]*)(\[([0-9]*|\'.*\')\])?/
 
     selectParts = []
@@ -26,8 +25,9 @@ class GroupSession
       key = false
       if r[2] isnt undefined
         key = r[3]
-        if parseInt(key) is key
-          key = "'#{key}'"
+        # quote non numeric keys
+        # if parseInt(key) isnt key
+        key = "'#{key}'"
 
       console.log(tableName)
 
