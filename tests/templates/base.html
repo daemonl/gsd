@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{% block title %}{% endblock %}</title>
+    <link rel='stylesheet' href="style.css"/>
+  </head>
+  <body>
+    {% block pageTitle %}{% endblock %}
+    {% for m in flash %}
+      <div class="alert alert-{{ m.type }}">{{ m.message }}</div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+    {% block script %}{% endblock %}
+  </body>
+</html>

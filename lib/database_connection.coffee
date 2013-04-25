@@ -70,7 +70,7 @@ class Collection
     c = @makeWhereString(conditions)
     setFields = []
     setValues = []
-    console.log(fieldsToUpdate, @tableDef)
+
     for k,v of fieldsToUpdate
 
       if @tableDef.fields.hasOwnProperty(k)

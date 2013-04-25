@@ -2,7 +2,7 @@ connect = require('connect')
 
 nunjucks = require('nunjucks')
 
-nenv = new nunjucks.Environment(new nunjucks.FileSystemLoader('templates'))
+nenv = null
 
 class Server
   helperFunctions = (req, res, next)->
@@ -33,7 +33,7 @@ class Server
     res.render = (templateName, parameters)->
       parameters.req = req
       parameters.flash = []
-      console.log(req.session)
+
       if req.session and req.session.flash
         parameters.flash = req.session.flash
         req.session.flash = []
@@ -66,6 +66,7 @@ class Server
 
 
   constructor: (@config, middlewares)->
+    nenv = new nunjucks.Environment(new nunjucks.FileSystemLoader(@config.templateDir))
     @app = connect()
     @app.use connect.logger('dev')
     @app.use connect.favicon()

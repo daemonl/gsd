@@ -29,7 +29,7 @@ class GroupSession
         # if parseInt(key) isnt key
         key = "'#{key}'"
 
-      console.log(tableName)
+
 
       if @config.model.hasOwnProperty(tableName)
         table = @config.model[tableName]
