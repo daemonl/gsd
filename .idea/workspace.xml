@@ -2,18 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="1d0d710a-2c0d-47ef-9965-dffcde2f8673" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/session_middleware.coffee" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/test.coffee" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/tests/runserver.coffee" afterPath="" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/lib/group_session.coffee" afterPath="$PROJECT_DIR$/lib/session/objects/group.coffee" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/lib/session_repository.coffee" afterPath="$PROJECT_DIR$/lib/session/repository.coffee" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/lib/socket_session.coffee" afterPath="$PROJECT_DIR$/lib/session/socket_session.coffee" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/lib/syncdb.coffee" afterPath="$PROJECT_DIR$/lib/data/syncdb.coffee" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/lib/user_session.coffee" afterPath="$PROJECT_DIR$/lib/session/objects/user.coffee" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/app.coffee" afterPath="$PROJECT_DIR$/lib/app.coffee" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/session/middleware.coffee" afterPath="$PROJECT_DIR$/lib/session/middleware.coffee" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/tests/runners/test_runner.coffee" afterPath="$PROJECT_DIR$/tests/runners/test_runner.coffee" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/README.md" afterPath="$PROJECT_DIR$/README.md" />
     </list>
     <ignored path="gsd.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -39,6 +28,7 @@
     <file path="/database_connection.coffee" changelist="1d0d710a-2c0d-47ef-9965-dffcde2f8673" time="1367131826426" ignored="false" />
     <file path="/collection.coffee" changelist="1d0d710a-2c0d-47ef-9965-dffcde2f8673" time="1367132025092" ignored="false" />
     <file path="/types.coffee" changelist="1d0d710a-2c0d-47ef-9965-dffcde2f8673" time="1367131836524" ignored="false" />
+    <file path="/README.md" changelist="1d0d710a-2c0d-47ef-9965-dffcde2f8673" time="1367134642711" ignored="false" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -116,7 +106,7 @@
       <file leaf-file-name="server.coffee" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/lib/server.coffee">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="49" column="42" selection-start="1077" selection-end="1077" vertical-scroll-proportion="0.0">
+            <state line="2" column="28" selection-start="50" selection-end="58" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -131,10 +121,19 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="test_runner.coffee" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="test_runner.coffee" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/tests/runners/test_runner.coffee">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="11" column="33" selection-start="299" selection-end="299" vertical-scroll-proportion="0.23913044">
+            <state line="9" column="0" selection-start="234" selection-end="234" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="README.md" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/README.md">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="2" column="0" selection-start="14" selection-end="14" vertical-scroll-proportion="0.04347826">
               <folding />
             </state>
           </provider>
@@ -152,7 +151,7 @@
       <file leaf-file-name="middleware.coffee" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/lib/session/middleware.coffee">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="17" column="32" selection-start="517" selection-end="517" vertical-scroll-proportion="0.0">
+            <state line="3" column="26" selection-start="120" selection-end="120" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -176,7 +175,6 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/tests/runners/templates/signup.html" />
         <option value="$PROJECT_DIR$/tests/runners/templates/index.html" />
         <option value="$PROJECT_DIR$/tests/runners/templates/app.html" />
         <option value="$PROJECT_DIR$/lib/database_connection.coffee" />
@@ -192,13 +190,14 @@
         <option value="$PROJECT_DIR$/lib/session/repository.coffee" />
         <option value="$PROJECT_DIR$/lib/session/middleware.coffee" />
         <option value="$PROJECT_DIR$/tests/runners/test_runner.coffee" />
+        <option value="$PROJECT_DIR$/README.md" />
       </list>
     </option>
   </component>
   <component name="PhpWorkspaceProjectConfiguration" backward_compatibility_performed="true" />
   <component name="ProjectFrameBounds">
-    <option name="x" value="1551" />
-    <option name="y" value="19" />
+    <option name="x" value="1821" />
+    <option name="y" value="62" />
     <option name="width" value="1433" />
     <option name="height" value="874" />
   </component>
@@ -257,7 +256,7 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="tests" />
+              <option name="myItemId" value="lib" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -272,6 +271,10 @@
             </PATH_ELEMENT>
             <PATH_ELEMENT>
               <option name="myItemId" value="lib" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="session" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -366,8 +369,8 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="1551" y="19" width="1433" height="874" extended-state="0" />
-    <editor active="false" />
+    <frame x="1821" y="62" width="1433" height="874" extended-state="0" />
+    <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -375,7 +378,7 @@
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Remote Host" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.25306416" sideWeight="0.69893897" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.25306416" sideWeight="0.69893897" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
@@ -494,6 +497,27 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/lib/data/syncdb.coffee">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="29" column="42" selection-start="639" selection-end="639" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/tests/runners/test_config.coffee">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="56" column="40" selection-start="1224" selection-end="1224" vertical-scroll-proportion="0.4214876">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/tests/runners/test_runner.coffee">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="9" column="0" selection-start="234" selection-end="234" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/lib/session/socket_session.coffee">
       <provider selected="true" editor-type-id="text-editor">
         <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0">
@@ -510,21 +534,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/lib/session/middleware.coffee">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="17" column="32" selection-start="517" selection-end="517" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/server.coffee">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="49" column="42" selection-start="1077" selection-end="1077" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/data/syncdb.coffee">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="29" column="42" selection-start="639" selection-end="639" vertical-scroll-proportion="0.0">
+        <state line="3" column="26" selection-start="120" selection-end="120" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
@@ -536,16 +546,16 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/tests/runners/test_config.coffee">
+    <entry file="file://$PROJECT_DIR$/lib/server.coffee">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="56" column="40" selection-start="1224" selection-end="1224" vertical-scroll-proportion="0.4214876">
+        <state line="2" column="28" selection-start="50" selection-end="58" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/tests/runners/test_runner.coffee">
+    <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="11" column="33" selection-start="299" selection-end="299" vertical-scroll-proportion="0.23913044">
+        <state line="2" column="0" selection-start="14" selection-end="14" vertical-scroll-proportion="0.04347826">
           <folding />
         </state>
       </provider>
