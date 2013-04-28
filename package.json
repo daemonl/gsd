@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "coffee app.coffee",
-    "test": "jasmine-node --coffee  tests/"
+    "test": "coffee tests/test_spec.coffee"
   },
   "main": "./lib/app.coffee",
   "dependencies": {

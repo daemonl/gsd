@@ -7,23 +7,20 @@ class SessionMiddleware
 
   constructor: (@config, @sessionRepository, @db)->
     @sessions = {}
+    @config.security.publicUrls.push(@config.security.paths.login)
+    @config.security.publicUrls.push(@config.security.paths.signup)
 
-    @loginUrl = "/login"
-    @loginTargetUrl = "/app"
-    @signupUrl = "/signup"
-    @logoutUrl = "/logout"
 
   sendError: (req, res, err)=>
-    console.log("E", err)
-    res.send(500, "An error occurred setting up your session")
+    console.log("SECURITY ERROR:", err)
+    res.send(500, @config.security.messages.unknownError)
 
   middleware: (req, res, next)=>
 
-    # Login Paths:
     loginPaths = [
-      {path: @loginUrl,  methods: ['POST'], handler: @handlePostLogin}
-      {path: @signupUrl, methods: ['POST'], handler: @handlePostSignup}
-      {path: @logoutUrl, methods: ['GET', 'POST'], handler: @handleLogout}
+      {path: @config.security.paths.login,  methods: ['POST'], handler: @handlePostLogin}
+      {path: @config.security.paths.signup, methods: ['POST'], handler: @handlePostSignup}
+      {path: @config.security.paths.logout, methods: ['GET', 'POST'], handler: @handleLogout}
     ]
 
     #Make sure req.session is a valid session
@@ -45,15 +42,11 @@ class SessionMiddleware
 
         # If the user is logged in:
         if req.sessionUser and req.sessionGroup
-          # Exclude paths which will fail for logged in users
-          if req._parsedUrl.path in ['/login', '/signup']
-            return res.redirect(@loginTargetUrl)
-          else
-            # Pass on
-            next()
+          next()
         else
           # No user, and the URL is not public.
-          return res.redirect @loginUrl
+          req.addFlash "error", @config.security.messages.notLoggedIn, ()=>
+            return res.redirect @config.security.paths.login
 
   #Make sure req.session is a valid session, creating a new one if not.
   ensureSession: (req, res, callback)=>
@@ -90,8 +83,8 @@ class SessionMiddleware
 
   handlePostLogin: (req, res)=>
     if not(req.body and req.body.hasOwnProperty('username') and req.body.hasOwnProperty('password') and req.body.username)
-      req.addFlash "error", "Please enter a username and password", ()=>
-        return res.redirect(@loginUrl)
+      req.addFlash "error", @config.security.messages.incompleteLogin, ()=>
+        return res.redirect(@config.security.paths.login)
       return
 
     username = req.body.username
@@ -101,15 +94,15 @@ class SessionMiddleware
     searchParams[@config.security.user.username] = username
 
     @db.getEntity @config.security.userTable, searchParams, (err, user)=>
-      return @sendError(req, res, err+"AA") if err
+      return @sendError(req, res, err) if err
       if not user
-        req.addFlash "error", "The username or password you entered is incorrect", ()=>
-        return res.redirect(@loginUrl)
+        req.addFlash "error", @config.security.messages.invalidLogin, ()=>
+        return res.redirect(@config.security.paths.login)
 
       scrypt.verifyHash user[@config.security.user.password], password, (err, result)=>
         if err or result is false
-          req.addFlash "error", "The username or password you entered is incorrect", ()=>
-          return res.redirect(@loginUrl)
+          req.addFlash "error", @config.security.messages.invalidLogin, ()=>
+          return res.redirect(@config.security.paths.login)
 
         # If Password was valid
         @generateSession req, res, ()=>
@@ -118,7 +111,7 @@ class SessionMiddleware
           groupCol = @config.model[@config.security.groupTable].pk
           req.session.group = user[groupCol]
           @hidrateSession req, res, ()=>
-            res.redirect(@loginTargetUrl)
+            res.redirect(@config.security.paths.target)
 
   handleLogout: (req, res)=>
     req.session.user = null
@@ -126,37 +119,30 @@ class SessionMiddleware
     @generateSession req, res, ()->
       res.redirect("/")
 
-
   handlePostSignup: (req, res)=>
-
     rejectSignup = (message)=>
       console.log("Signup Error", message)
       req.addFlash "error", message, ()=>
-        res.redirect(@signupUrl)
+        res.redirect(@config.security.paths.signup)
 
     username = req.body.username
     password = req.body.password
     password2 = req.body.password2
 
     if !username or username.length < 3
-      return rejectSignup("Username must be at least 3 characters long")
+      return rejectSignup(@config.security.messages.usernameLength)
 
     if !password or password.length < 6
-      return rejectSignup("Password must be at least 6 characters long")
+      return rejectSignup(@config.security.messages.passwordLength)
 
     if !password2 or password isnt password2
-      return rejectSignup("Passwords must match")
+      return rejectSignup(@config.security.messages.passwordMatch)
 
     cond = {}
     cond[@config.security.user.username] = username
     @db.getEntity @config.security.userTable, cond, (err, user)=>
-      if err
-        console.log(err)
-        return rejectSignup("An error occurred")
-
-      if user
-        return rejectSignup("A user with that username already exists.")
-
+      return @sendError(req, res, err) if err
+      return rejectSignup(@config.security.messages.usernameExists) if user
 
       scrypt.passwordHash password, 0.1, (err, pwdhash)=>
         return @sendError(req, res, err) if err
@@ -166,13 +152,13 @@ class SessionMiddleware
           groupCollection.insert groupObj, (err, groupObject)=>
 
             @db.getCollection @config.security.userTable, (err, userCollection)=>
-              return @sendError(req, res, err) if err
+              return rejectSignup(err) if err
               userObj = {}
               userObj[@config.security.user.username] = username
               userObj[@config.security.user.password] = pwdhash
               userObj[@config.security.groupTable + "_id"] = groupObject.id
-              userCollection.insert userObj, (err, userObject)=>
-                return @sendError(req, res, err) if err
+              userCollection.insert userObj, (err)=>
+                return rejectSignup(err) if err
                 @handlePostLogin(req, res)
 
 

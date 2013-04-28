@@ -11,7 +11,6 @@ class Server
 
     res.end = (content = null)->
       if req.hasOwnProperty('saveSession')
-        console.log("SAVE!")
         req.saveSession ()->
           origEnd(content)
       else
@@ -78,6 +77,9 @@ class Server
     @app.use helperFunctions
     for middleware in middlewares
       @app.use(middleware)
+    if @config.hasOwnProperty('middleware')
+      for middleware in @config.middleware
+        @app.use(middleware)
     @app.use directRender(@config.directRenderPaths)
 
   start: ()=>

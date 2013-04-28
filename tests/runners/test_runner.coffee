@@ -16,19 +16,26 @@ gConfig = null
 
 `
 consoleColors = {
+  black: "\033[30m",
   red: "\033[31m",
   green: "\033[32m",
+  yellow: "\033[33m",
   blue: "\033[34m",
+  pink: "\033[35m",
+  cyan: "\033[36m",
+  white: "\033[37m",
   reset: "\033[0m"
 }
 `
 currentTest = null
+testParts = []
 
 tests = []
 completedTests = []
 
 
 teardown = ()->
+  console.log("\n\n-- Keeping the server alive for manual tests --\n")
   null
 
 
@@ -47,32 +54,45 @@ removeDatabase = (callback = null)->
         callback()
 
 testsEnded = ()->
-  console.log ("\nTESTS ENDED\nTeardown\n")
+  console.log ("\n~~~~~~~~~~~~~~~\nTESTS ENDED\n")
   for t in completedTests
-    console.log(t.description)
-    for exp in t.results
-      if exp.pass
-        console.log(consoleColors.green + "PASS" + consoleColors.reset)
-      else
-        console.log(consoleColors.red + "FAIL" + consoleColors.reset + " - " + exp.message)
+    line = ""
+    console.log t.description
+    pass = 0
 
+    for exp in t.results
+
+      if exp.pass
+        line += (consoleColors.green + "." + consoleColors.reset)
+        pass += 1
+      else
+        line += (consoleColors.red + "F" + consoleColors.reset)
+    line = "  " + pass + " / " +  t.results.length + "  " + line
+    console.log(line)
   teardown()
+
 
 nextTest = ()->
   return testsEnded() if not tests.length
 
   t = tests.shift()
   currentTest = t
+  testParts = []
   t.results = []
 
   fnDone = ()->
     completedTests.push(t)
     nextTest()
 
-  console.log("")
+  console.log("" + consoleColors.cyan)
   console.log("=============================================================")
   console.log("It " + t.description)
-  console.log("-------------------------------------------------------------")
+  console.log("-------------------------------------------------------------" + consoleColors.reset)
+
+  testString = t.test.toString().split('\n')
+  for ts in testString
+    if (ts.trim().substr(0, 6) is "expect")
+      testParts.push(ts.trim())
 
   try
     t.test(fnDone)
@@ -82,13 +102,15 @@ nextTest = ()->
 
 class expectWrapped
   constructor: (@test, @val)->
+    @testPart = testParts.shift()
 
   pass: ()->
     @test.results.push({pass: true, message: ''})
-    console.log(consoleColors.green + "PASS" + consoleColors.reset)
+
+    console.log(consoleColors.green + "PASS" + consoleColors.yellow + " " + @testPart + consoleColors.reset)
   fail: (message)->
     @test.results.push({pass: false, message: message})
-    console.log(consoleColors.red + "FAIL" + consoleColors.reset + " - " + message)
+    console.log(consoleColors.red + "FAIL" + consoleColors.reset + " - " + message +  consoleColors.yellow + " " + @testPart + consoleColors.reset)
 
   notToEqual: (val)=>
     if (val isnt @val)
@@ -97,6 +119,7 @@ class expectWrapped
       @fail("Expected '#{@val}' toEqual '#{val}'")
 
   toEqual: (val)=>
+
     if (val is @val)
       @pass()
     else
@@ -136,6 +159,7 @@ test = (config, fnTests)->
     }
 
   expect = (val)->
+
     return new expectWrapped(currentTest, val)
 
   # get the tests

@@ -1,5 +1,7 @@
 Server = require('./server')
-DatabaseConnection = require("./database_connection")
+
+DatabaseConnection = require("./data/database_connection")
+
 SessionMiddleware = require("./session_middleware")
 SessionRepository = require("./session_repository")
 SocketSession = require("./socket_session")

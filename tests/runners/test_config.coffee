@@ -43,17 +43,38 @@ config = {
     password: ""
     database: "cesoft"
   }
+  dbLog: 'default'
+
   directRenderPaths: [
     {path: "/",       methods: ["GET"], template: "index.html"}
     {path: "/login",  methods: ["GET"], template: "login.html"}
     {path: "/signup", methods: ["GET"], template: "signup.html"}
     {path: "/app",    methods: ["GET"], template: "app.html"}
   ]
+
   model: collections
   publicDir: "tests/runners/public"
   templateDir: "tests/runners/templates"
   security:{
-    publicUrls: ["/style.css", "/login", "/signup", "/index", "/"]
+    paths: {
+      login: "/login"
+      logout: "/logout"
+      signup: "/signup"
+      target: "/app"
+    }
+    messages: {
+      unknownError: "An unknown error occurred"
+
+      invalidLogin: "The username or password you entered is incorrect"
+      incompleteLogin: "Please enter a username and password"
+      notLoggedIn: "You must be logged in to access this page"
+
+      passwordLength: "Your password must be at least 6 characters long"
+      usernameLength: "Your username must be at least 3 characters long"
+      usernameExists: "That username is already taken"
+      passwordMatch: "Passwords must match"
+    }
+    publicUrls: ["/style.css", "/"]
     userTable: 'staff'
     user: {
       username: 'user_name'
