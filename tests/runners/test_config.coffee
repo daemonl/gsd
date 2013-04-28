@@ -41,7 +41,7 @@ config = {
     host: "localhost"
     user: "root"
     password: ""
-    database: "cesoft"
+    database: ""
   }
   dbLog: 'default'
 
