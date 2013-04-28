@@ -5,7 +5,17 @@ nunjucks = require('nunjucks')
 nenv = null
 
 class Server
-  helperFunctions = (req, res, next)->
+  helperFunctions = (req, res, next)=>
+
+    origEnd = res.end
+
+    res.end = (content = null)->
+      if req.hasOwnProperty('saveSession')
+        console.log("SAVE!")
+        req.saveSession ()->
+          origEnd(content)
+      else
+        origEnd(content)
 
     res.redirect = (url)->
       res.statusCode = 302
@@ -37,9 +47,7 @@ class Server
       if req.session and req.session.flash
         parameters.flash = req.session.flash
         req.session.flash = []
-        if req.saveSession
-          req.saveSession ()->
-            null
+
       tpl = nenv.getTemplate(templateName)
       res.send(tpl.render(parameters))
 
@@ -51,18 +59,13 @@ class Server
         callback()
     next()
 
-  directRenderPaths = [
-    {path: "/",      methods: ["GET"], template: "index.html"}
-    {path: "/login", methods: ["GET"], template: "login.html"}
-    {path: "/app",   methods: ["GET"], template: "app.html"}
-  ]
-
-  directRender = (req, res, next)->
-    for p in directRenderPaths
-      if req.method in p.methods and req._parsedUrl.path is p.path
-        res.render(p.template, {})
-        return
-    next()
+  directRender = (directRenderPaths)->
+    return (req, res, next)->
+      for p in directRenderPaths
+        if req.method in p.methods and req._parsedUrl.path is p.path
+          res.render(p.template, {})
+          return
+      next()
 
 
   constructor: (@config, middlewares)->
@@ -75,7 +78,7 @@ class Server
     @app.use helperFunctions
     for middleware in middlewares
       @app.use(middleware)
-    @app.use directRender
+    @app.use directRender(@config.directRenderPaths)
 
   start: ()=>
     @server = @app.listen(@config.port);

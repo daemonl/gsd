@@ -1,14 +1,17 @@
 cookie = require('cookie')
 signature = require('cookie-signature')
 Moment = require('moment')
+scrypt = require('scrypt')
 
 class SessionMiddleware
 
   constructor: (@config, @sessionRepository, @db)->
     @sessions = {}
 
-  loginUrl: "/login"
-  loginTargetUrl: "/app"
+    @loginUrl = "/login"
+    @loginTargetUrl = "/app"
+    @signupUrl = "/signup"
+    @logoutUrl = "/logout"
 
   sendError: (req, res, err)=>
     console.log("E", err)
@@ -18,9 +21,9 @@ class SessionMiddleware
 
     # Login Paths:
     loginPaths = [
-      {path: '/login', methods: ['POST'], handler: @handlePostLogin}
-      {path: '/signup', methods: ['POST'], handler: @handlePostSignup}
-      {path: '/logout', methods: ['GET', 'POST'], handler: @handleLogout}
+      {path: @loginUrl,  methods: ['POST'], handler: @handlePostLogin}
+      {path: @signupUrl, methods: ['POST'], handler: @handlePostSignup}
+      {path: @logoutUrl, methods: ['GET', 'POST'], handler: @handleLogout}
     ]
 
     #Make sure req.session is a valid session
@@ -94,8 +97,6 @@ class SessionMiddleware
     username = req.body.username
     password = req.body.password
 
-    console.log("Login With: ", username, password)
-
     searchParams = {}
     searchParams[@config.security.user.username] = username
 
@@ -104,15 +105,20 @@ class SessionMiddleware
       if not user
         req.addFlash "error", "The username or password you entered is incorrect", ()=>
         return res.redirect(@loginUrl)
-      # If Password was valid
-      console.log("LOGIN SUCCESS - This Function is not complete.", user)
-      req.session.user = user.id
-      console.log(@config.security.groupTable)
-      groupCol = @config.model[@config.security.groupTable].pk
-      console.log("GC", groupCol, user[groupCol])
-      req.session.group = user[groupCol]
-      @hidrateSession req, res, ()=>
-        res.redirect(@loginTargetUrl)
+
+      scrypt.verifyHash user[@config.security.user.password], password, (err, result)=>
+        if err or result is false
+          req.addFlash "error", "The username or password you entered is incorrect", ()=>
+          return res.redirect(@loginUrl)
+
+        # If Password was valid
+        @generateSession req, res, ()=>
+          req.session.user = user.id
+          console.log(@config.security.groupTable)
+          groupCol = @config.model[@config.security.groupTable].pk
+          req.session.group = user[groupCol]
+          @hidrateSession req, res, ()=>
+            res.redirect(@loginTargetUrl)
 
   handleLogout: (req, res)=>
     req.session.user = null
@@ -122,16 +128,70 @@ class SessionMiddleware
 
 
   handlePostSignup: (req, res)=>
-    null
+
+    rejectSignup = (message)=>
+      console.log("Signup Error", message)
+      req.addFlash "error", message, ()=>
+        res.redirect(@signupUrl)
+
+    username = req.body.username
+    password = req.body.password
+    password2 = req.body.password2
+
+    if !username or username.length < 3
+      return rejectSignup("Username must be at least 3 characters long")
+
+    if !password or password.length < 6
+      return rejectSignup("Password must be at least 6 characters long")
+
+    if !password2 or password isnt password2
+      return rejectSignup("Passwords must match")
+
+    cond = {}
+    cond[@config.security.user.username] = username
+    @db.getEntity @config.security.userTable, cond, (err, user)=>
+      if err
+        console.log(err)
+        return rejectSignup("An error occurred")
+
+      if user
+        return rejectSignup("A user with that username already exists.")
+
+
+      scrypt.passwordHash password, 0.1, (err, pwdhash)=>
+        return @sendError(req, res, err) if err
+        @db.getCollection @config.security.groupTable, (err, groupCollection)=>
+          return @sendError(req, res, err) if err
+          groupObj = {}
+          groupCollection.insert groupObj, (err, groupObject)=>
+
+            @db.getCollection @config.security.userTable, (err, userCollection)=>
+              return @sendError(req, res, err) if err
+              userObj = {}
+              userObj[@config.security.user.username] = username
+              userObj[@config.security.user.password] = pwdhash
+              userObj[@config.security.groupTable + "_id"] = groupObject.id
+              userCollection.insert userObj, (err, userObject)=>
+                return @sendError(req, res, err) if err
+                @handlePostLogin(req, res)
+
 
 
   generateSession: (req, res, callback)=>
     # Generate a database session
     @db.getCollection @config.security.sessionTable, (err, sessionCollection)=>
       return @sendError(req, res, err) if err
+
       serializedSession = {}
       sessionCollection.insert serializedSession, (err, result)=>
-        return callback(err) if err
+        return @sendError(req, res, err) if err
+        console.log("Has new session", result)
+        req.saveSession = (callback)=>
+          @db.update @config.security.sessionTable, {id: req.session.id}, req.session, (err, res)=>
+            console.log(err) if err
+            console.log("Saved Session")
+            callback()
+
         req.session = result
         req.session_in_database = {}
         for k,v of req.session

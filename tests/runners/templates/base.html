@@ -1,0 +1,14 @@
+<html>
+<head>
+
+</head>
+<body>
+<h1>{% block pageTitle %}{% endblock %}</h1>
+<h2>FLASH:</h2>
+{% for m in flash %}
+{{ m.type }}: {{ m.message }}
+{% endfor %}
+<hr>
+{% block content %}{% endblock %}
+</body>
+</html>

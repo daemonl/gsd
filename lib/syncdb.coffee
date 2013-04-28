@@ -1,12 +1,7 @@
 mysql = require('mysql')
 dfd = require('node-promise')
 
-db = mysql.createConnection {
-  host: 'localhost'
-  user: 'root'
-  password: ''
-  database: 'test'
-}
+db = null
 
 fixTableEngine = (tableName, callback)->
   console.log("Fix Engine on #{tableName}")
@@ -27,7 +22,7 @@ getDefForField = (field)->
   if field.type is 'string'
     def = {
       length: 100
-      nullable: false
+      nullable: true
     }
     opt = optionsWithDefaults def, field
     nullPart = if opt.nullable then "NULL" else "NOT NULL"
@@ -37,9 +32,28 @@ getDefForField = (field)->
   if field.type is 'id'
     return "INT(11) UNSIGNED NOT NULL AUTO_INCREMENT"
 
+  if field.type is 'array'
+    return "TEXT NULL"
+
+  if field.type is 'ref'
+    def = {
+      nullable: true
+    }
+    opt = optionsWithDefaults def, field
+    nullPart = if opt.nullable then "NULL" else "NOT NULL"
+    return "INT(11) UNSIGNED #{nullPart}"
+
+  if field.type is 'datetime'
+    def = {
+      nullable: true
+    }
+    opt = optionsWithDefaults def, field
+    nullPart = if opt.nullable then "NULL" else "NOT NULL"
+    return "DATETIME #{nullPart}"
+
   if field.type is 'choice'
     def = {
-      nullable: false
+      nullable: true
       choices: []
     }
     opt = optionsWithDefaults def, field
@@ -58,6 +72,7 @@ createTable = (table, callback)->
 
   pk = null
   for field in table.fields
+
     if field.type is 'id'
       pk = field
     parts.push("`#{field.field}` #{getDefForField(field)}")
@@ -120,70 +135,68 @@ onEachRow = (query, f, callback)->
     doAllThen(res, f, callback)
 
 
-structure = {
-  person: {
-      fields: [
-        {
-          field: 'id'
-          type: 'id'
-        },
-        {
-          field: 'title'
-          type: 'choice'
-          label: "Title"
-          choices: [
-            "Mr", "Mrs", "Ms", "Dr"
-          ]
-        },
-        {
-          field: 'first_name'
-          type: 'string'
-          label: 'First'
-        },
-        {
-          field: 'last_name'
-          type: 'string'
-          label: "Last"
-        }
-      ]
-    }
-}
 
-db.connect ()->
-  # Ensure InnoDB for all tables.
-  f = (t, callback)->
-    fixTableEngine(t.Name, callback)
+module.exports = (config, callback)->
 
-  onEachRow "SHOW TABLE STATUS WHERE Engine != 'InnoDB'", f, ()->
+  db = mysql.createConnection {
+    host: config.db.host
+    user: config.db.user
+    password: config.db.password
+  }
 
-    pendingTables = {}
-    for tableName, def of structure
-      nd = {}
-      nd.table = tableName
-      nd.fields = []
-      for f in def.fields
-        nd.fields.push(f)
-      pendingTables[tableName] = nd
+  structure = config.model
 
-    f = (t, callback)->
-      if not pendingTables.hasOwnProperty(t.Name)
-        console.log("Table '#{t.Name}' not in definition. Skipped.")
-        return callback()
+  db.connect (err)->
+    return console.log(err) if err
 
-      thisTable = pendingTables[t.Name]
-      delete pendingTables[t.Name]
-      checkColumns thisTable, callback
+    console.log("BEGIN Database Sync")
+
+    db.query "CREATE DATABASE IF NOT EXISTS #{config.db.database}", (err)->
+      return console.log(err) if err
+
+      db.query "USE #{config.db.database}", (err)->
+        return console.log(err) if err
+
+        # Ensure InnoDB for all tables.
+        f = (t, callback)->
+          fixTableEngine(t.Name, callback)
+
+        onEachRow "SHOW TABLE STATUS WHERE Engine != 'InnoDB'", f, ()->
+
+          pendingTables = {}
+          for tableName, def of structure
+            console.log(tableName)
+            nd = {}
+            nd.table = tableName
+            nd.fields = []
+            for name, field of def.fields
+              field.field = name
+              nd.fields.push(field)
+            pendingTables[tableName] = nd
+
+          f = (t, callback)->
+            if not pendingTables.hasOwnProperty(t.Name)
+              console.log("Table '#{t.Name}' not in definition. Skipped.")
+              return callback()
+
+            thisTable = pendingTables[t.Name]
+            delete pendingTables[t.Name]
+            checkColumns thisTable, callback
 
 
-    onEachRow "SHOW TABLE STATUS", f, ()->
+          onEachRow "SHOW TABLE STATUS", f, ()->
 
-      f = (table, callback)->
-        createTable(table)
-        callback()
 
-      addQueue = []
-      for k,table of pendingTables
-        addQueue.push(table)
 
-      doAllThen addQueue, f, ()->
-       db.end()
+            f = (table, callback)->
+              createTable(table)
+              callback()
+
+            addQueue = []
+            for k,table of pendingTables
+              console.log("ADD TABLE")
+              addQueue.push(table)
+
+            doAllThen addQueue, f, ()->
+             db.end()
+             callback()

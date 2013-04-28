@@ -83,7 +83,8 @@ class Collection
 
     query = "UPDATE #{@tableName} t SET #{u} #{c}"
 
-    console.log("QS", query, setValues)
+    console.log query, setValues
+
 
     @mysql.query query, setValues, callback
 
@@ -104,7 +105,6 @@ class Collection
     if Object.keys(fields).length < 1
       return @mysql.query "INSERT INTO #{@tableName} VALUES ()", null, postInsert
 
-
     query = "INSERT INTO #{@tableName} SET ?"
     console.log(query, fields)
     @mysql.query query, fields, postInsert
@@ -123,6 +123,7 @@ class Collection
           o[field] = type.fromDb(row[field])
         o.id = o[@tableDef.pk]
         returnArray.push(o)
+      console.log("Found " + returnArray.length)
       callback(null, returnArray)
 
   findOne: (conditions, callback)->
@@ -164,7 +165,7 @@ class DatabaseConnection
     @getCollection collectionName, (err, collection)=>
       return callback(err) if err
 
-      console.log(entitySerialized)
+
 
       collection.update conditions, entitySerialized, (err, result)->
         return callback(err) if err

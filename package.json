@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "coffee app.coffee",
-    "test": "jasmine-node --coffee tests/"
+    "test": "jasmine-node --coffee  tests/"
   },
   "main": "./lib/app.coffee",
   "dependencies": {
@@ -19,6 +19,8 @@
     "nunjucks": "*",
     "node-promise": "*",
     "mysql": "*",
-    "moment": "*"
+    "moment": "*",
+    "scrypt": "*",
+    "should": "*"
   }
 }

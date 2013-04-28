@@ -6,7 +6,7 @@ collections = {
     table: "session"
     pk: "session_id"
     fields: {
-      session_id: {type: 'gid'}
+      session_id: {type: 'id'}
       user:  {type: 'ref', collection: 'user'}
       group: {type: 'ref', collection: 'user'}
       flash: {type: 'array'}
@@ -43,10 +43,15 @@ config = {
     password: ""
     database: "cesoft"
   }
-
+  directRenderPaths: [
+    {path: "/",       methods: ["GET"], template: "index.html"}
+    {path: "/login",  methods: ["GET"], template: "login.html"}
+    {path: "/signup", methods: ["GET"], template: "signup.html"}
+    {path: "/app",    methods: ["GET"], template: "app.html"}
+  ]
   model: collections
-  publicDir: "tests/public"
-  templateDir: "tests/templates"
+  publicDir: "tests/runners/public"
+  templateDir: "tests/runners/templates"
   security:{
     publicUrls: ["/style.css", "/login", "/signup", "/index", "/"]
     userTable: 'staff'
