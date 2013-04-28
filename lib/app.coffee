@@ -2,9 +2,9 @@ Server = require('./server')
 
 DatabaseConnection = require("./data/database_connection")
 
-SessionMiddleware = require("./session_middleware")
-SessionRepository = require("./session_repository")
-SocketSession = require("./socket_session")
+SessionMiddleware = require("./session/middleware")
+SessionRepository = require("./session/repository")
+SocketSession = require("./session/socket_session")
 connect = require("connect")
 socketIo = require('socket.io')
 

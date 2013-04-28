@@ -1,5 +1,5 @@
-GroupSession = require('./group_session')
-UserSession = require('./user_session')
+GroupSession = require('./objects/group')
+UserSession = require('./objects/user')
 
 ###
   Responsible for managing user and group sessions, serializing to the database, and hidrating.

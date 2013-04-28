@@ -9,7 +9,7 @@ testVars.database = "GSD_TEST_DATABASE_FRUENMUFFIN"
 mysql = require('mysql')
 
 gsd = require('../../lib/app')
-syncdb = require('../../lib/syncdb')
+syncdb = require('../../lib/data/syncdb')
 helpers = require('./test_helpers')
 
 gConfig = null
