@@ -1,12 +1,13 @@
-gsd
+gsd (Get Stuff Done)
 =========
 
 MySQL Abstraction in node.js
 ---------
-connect for http
-socket.io for data sync
-nunjucks for template rendering
-scrypt for password hashing
+
+- connect for http
+- socket.io for data sync
+- nunjucks for template rendering
+- scrypt for password hashing
 
 A very opinionated data access framework (/server).
 
