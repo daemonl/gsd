@@ -44,6 +44,13 @@ class DatabaseConnection
     @onDb (db)=>
       callback(null, new Collection(@config, db, collectionName, @log))
 
+  query: (query, callback)=>
+    @onDb (db)=>
+      db.query query, {}, (err, res)->
+        console.log(err)
+        console.log(res)
+        callback(null, res)
+
   update: (collectionName, conditions, entitySerialized, callback)=>
     @getCollection collectionName, (err, collection)=>
       return callback(err) if err

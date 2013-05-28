@@ -2,9 +2,11 @@
 querystring = require('querystring')
 
 http = require('http')
+io = require('socket.io-client')
 
 sessionCookie = null
 config = null
+socket = null
 
 httpDefaultOptions = (path)->
 
@@ -63,13 +65,33 @@ extractCookie = (res, name)->
       return hp[1]
   return undefined
 
+socketUtil = require('../../node_modules/socket.io-client/lib/util')
+socketUtil.request = ()->
+  console.log("USED")
+  XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
+  XMLHttpRequest.setRequestHeader('cookieTest', config.security.sessionCookie + "=" + sessionCookie)
+  return new XMLHttpRequest();
+
+connectSocket = (callback)->
+
+  socket = io.connect('localhost', {
+    port: config.port,
+    headers: {'cookietest': config.security.sessionCookie + "=" + sessionCookie}
+  })
+
+  socket.on 'connect', ()->
+    console.log("socket connected")
+    callback()
+
 module.exports = {
   httpGet: httpGet
   httpPostForm: httpPostForm
   httpDefaultOptions: httpDefaultOptions
   extractCookie: extractCookie
+  connectSocket: connectSocket
   setSessionCookie: (cookie)->
     sessionCookie = cookie
   setConfig: (sconfig)->
     config = sconfig
+
 }

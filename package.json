@@ -16,6 +16,7 @@
     "cookie-signature": "0.0.1",
     "cookie": "0.0.5",
     "socket.io": "*",
+    "socket.io-client": "*",
     "nunjucks": "*",
     "node-promise": "*",
     "mysql": "*",

@@ -43,6 +43,14 @@ getDefForField = (field)->
     nullPart = if opt.nullable then "NULL" else "NOT NULL"
     return "INT(11) UNSIGNED #{nullPart}"
 
+  if field.type is 'model'
+    def = {
+      nullable: true
+    }
+    opt = optionsWithDefaults def, field
+    nullPart = if opt.nullable then "NULL" else "NOT NULL"
+    return "INT(11) UNSIGNED #{nullPart}"
+
   if field.type is 'datetime'
     def = {
       nullable: true
@@ -50,6 +58,9 @@ getDefForField = (field)->
     opt = optionsWithDefaults def, field
     nullPart = if opt.nullable then "NULL" else "NOT NULL"
     return "DATETIME #{nullPart}"
+
+  if field.type is 'int'
+    return "INT(11) UNSIGNED"
 
   if field.type is 'choice'
     def = {
@@ -164,7 +175,8 @@ module.exports = (config, callback)->
         onEachRow "SHOW TABLE STATUS WHERE Engine != 'InnoDB'", f, ()->
 
           pendingTables = {}
-          for tableName, def of structure
+
+          addTable = (tableName, def)->
             console.log(tableName)
             nd = {}
             nd.table = tableName
@@ -172,7 +184,13 @@ module.exports = (config, callback)->
             for name, field of def.fields
               field.field = name
               nd.fields.push(field)
+              if field.hasOwnProperty('type') and field.type is 'model'
+                addTable(field.definition.table, field.definition)
             pendingTables[tableName] = nd
+
+          for tableName, def of structure
+            addTable(tableName, def)
+
 
           f = (t, callback)->
             if not pendingTables.hasOwnProperty(t.Name)

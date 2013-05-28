@@ -12,10 +12,16 @@ class SocketSession
       hs.sessionUser.addSocket(socket)
 
   socketHandshake: (data, accept)=>
-    if not data.headers.cookie
+    headerCookie = null
+    if data.headers.cookie
+      headerCookie = data.headers.cookie
+    else if data.headers.cookietest
+      headerCookie = data.headers.cookietest
+    else
+      console.log(data.headers)
       return accept('Session cookie required for authentication', false)
 
-    data.signedCookies = connect.utils.parseSignedCookies(cookie.parse(decodeURIComponent(data.headers.cookie)), @config.security.siteSecret)
+    data.signedCookies = connect.utils.parseSignedCookies(cookie.parse(decodeURIComponent(headerCookie)), @config.security.siteSecret)
 
     data.sessionCookie = data.signedCookies[@config.security.sessionCookie]
 

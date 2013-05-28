@@ -1,89 +1,83 @@
+PathParser = require('../path_parser')
+
+
 class GroupSession
 
   activeUsers: {}
 
   constructor: (@config, @serialized, @db)->
+    @pathParser = new PathParser(@config.model)
     return @
 
 
   addUser: (user)=>
     @activeUsers[user.serialized._id] = user
 
-  getQuery: (user, path)=>
-    # match table[id]
-    exp = /([a-zA-Z_][a-zA-Z0-9_]*)(\[([0-9]*|\'.*\')\])?/
-
-    selectParts = []
-    whereConditions = []
-    joins = []
-    fromDef = null
-    tn = 0
-
-    for p in path.split('.').reverse()
-      r = exp.exec(p)
-      tableName = r[1]
-      key = false
-      if r[2] isnt undefined
-        key = r[3]
-        # quote non numeric keys
-        # if parseInt(key) isnt key
-        key = "'#{key}'"
-
-
-
-      if @config.model.hasOwnProperty(tableName)
-        table = @config.model[tableName]
-        if fromDef is null
-          fromDef = "#{table.table} t#{tn}"
-          selectParts.push("t#{tn}.*")
-          # Focus Entity
-
-          if key isnt false
-            whereConditions.push("t#{tn}.#{table.pk} = #{key}")
-        else
-          join = "INNER JOIN #{table.table} t#{tn} ON t#{tn}.#{table.pk} = t#{tn-1}.#{table.pk}"
-          if key isnt false
-            join += " AND t#{tn}.#{table.pk} = #{key}"
-          joins.push(join)
-        tn += 1
-
-    user_id = user.serialized.id
-    group_id = @serialized.id
-    whereConditions.push("(t#{tn-1}.user_id = #{user_id} OR t#{tn-1}.user_id IS NULL AND t#{tn-1}.group_id = #{group_id})")
-
-    query = "SELECT #{selectParts.join(',')} FROM #{fromDef} "
-    query += joins.join(" ")
-    if whereConditions.length
-      query += " WHERE " + whereConditions.join(" AND ")
-    return query
-
-  _traverse: (user, path, callback)=>
-    if not path
-      return callback("Path must be specified")
-    pathParts = path.split(".")
-
-    model = @config.model
-
-    query = ""
-
-    for part in pathParts
-      sp = part.split('[')
-      table = ''
-      id = null
-      if sp.length is 1
-        table = sp[0]
-      if sp.length is 2
-        table = sp[0]
-        id = sp[1].substring(0, sp[1].length - 1)
-      console.log("A", table, id)
-
-
-
-    callback(null, null, null, query)
-
   get: (user, path, callback)=>
-    query = @getQuery(user, path)
-    callback(null, query)
+    query = @pathParser.parse path, (err, parsed)=>
+      if err
+        console.log("ERR:", err)
+        return callback(err, null)
+
+
+      fields = []
+      joins = []
+
+      fieldMap = []
+
+      aliasId = 0
+      for k, t of parsed.tables
+        t.aliasId = aliasId
+        aliasId += 1
+
+      for k, t of parsed.tables
+        for field in t.fields
+          fid = fieldMap.length
+          mapLabel = t.mapLabel
+          fieldMap.push({table: k, field: field, mapLabel: mapLabel})
+          fields.push("t#{t.aliasId}.#{field} AS f#{fid}")
+        if t.hasOwnProperty('join')
+          parentAlias = parsed.tables[t.join.parent].aliasId
+          joins.push("LEFT JOIN #{t.join.childTable} t#{t.aliasId} ON t#{t.aliasId}.#{t.join.childId} = t#{parentAlias}.#{t.join.parentId}")
+
+
+      conditionStrings = []
+      for c in parsed.conditions
+        tableAlias = parsed.tables[c.tablePath].aliasId
+        conditionStrings.push("t#{tableAlias}.#{c.field} #{c.compare} #{c.value}")
+
+      sql = "SELECT #{fields.join(', ')} \n  FROM #{parsed.root.table} t0"
+      if (joins.length)
+        sql += "\n  #{joins.join('\n  ')}"
+
+      if (conditionStrings.length)
+        sql += "\n WHERE \n  #{conditionStrings.join('\n  AND  ')}"
+
+
+      @db.query sql, (err, res)->
+        if err or not res
+          return callback("There was an error in the query. Probably our fault.", null)
+
+
+        returnResults = []
+        for row in res
+          retob = {}
+          for k, field of fieldMap
+            currentObject = retob
+            mapLabel = field.mapLabel.replace /\{f[0-9]*\}/g, (k)->
+              return row[k.substring(1, k.length - 1)]
+
+            for pathPart in mapLabel.split(".")
+              if not currentObject.hasOwnProperty(pathPart)
+                currentObject[pathPart] = {}
+              currentObject = currentObject[pathPart]
+            currentObject[field.field] = row['f'+k]
+          returnResults.push(retob)
+
+
+        callback(null, returnResults)
+
+    #callback(null, query)
 
   set: (user, path, value, callback)=>
     @_traverse user, path, (err, object, parentObject, key)=>

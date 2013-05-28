@@ -20,13 +20,25 @@ class UserSession
 
 
   get: (path, callback)=>
-    return @group.get(@, path, callback)
+    try
+      return @group.get(@, path, callback)
+    catch e
+      throw e
+      console.log(e)
+      null
+
 
   set: (path, value, callback)=>
-    return @group.set(@, path, value, callback)
+    try
+      return @group.set(@, path, value, callback)
+    catch e
+      null
 
   do: (path, params, callback)=>
-    return @group.do(@, path, params, callback)
+    try
+      return @group.do(@, path, params, callback)
+    catch e
+      null
 
 
 module.exports = UserSession

@@ -74,6 +74,10 @@ testRunner.test config, (config, testVars, fn, it, expect)->
       expect(res.body).toContain("THIS IS THE APP PAGE")
       done()
 
+  it "Should connect on a socket", (done)->
+    fn.connectSocket (socket)->
+      done()
+
   it "Should logout", (done)->
     fn.httpGet config.security.paths.logout, (res)->
       expect(res.statusCode).toEqual(302)
@@ -98,6 +102,8 @@ testRunner.test config, (config, testVars, fn, it, expect)->
       fn.httpGet res.headers['location'], (res)->
         expect(res.body).toContain(config.security.messages.usernameExists)
         done()
+
+
 
 
 

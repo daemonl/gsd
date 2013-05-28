@@ -9,7 +9,7 @@ MySQL Abstraction in node.js
 - nunjucks for template rendering
 - scrypt for password hashing
 
-A very opinionated data access framework (/server).
+An opinionated data access framework (/server).
 
 Very early development, it doesn't actually work yet.
 
