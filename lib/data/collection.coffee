@@ -6,6 +6,7 @@ class Collection
       throw "Invalid Collection Name: "+@collectionName
     @tableDef = @config.model[@collectionName]
     @tableName = @tableDef.table
+    @pk = @tableDef.pk
 
   makeWhereString: (conditions)=>
 
@@ -33,6 +34,11 @@ class Collection
     @log query
     @mysql.query query, setValues, callback
 
+  updateOne: (id, fieldsToUpdate, callback)=>
+    conditions = {}
+    conditions[@pk] = id
+    @update(conditions, fieldsToUpdate, callback)
+
   insert: (fields, callback)=>
     postInsert = (err, res)=>
       if err
@@ -56,23 +62,31 @@ class Collection
     query = "SELECT t.* FROM #{@tableName} t "
     query = query + @makeWhereString(conditions)
 
+    @log(query)
     @mysql.query query, (err, result)=>
       return callback(err) if err
-      returnArray = []
+      returnObject = {}
       for row in result
         o = {}
         for field,def of @tableDef.fields
           type = dataTypes[def.type]
           o[field] = type.fromDb(row[field])
         o.id = o[@tableDef.pk]
-        returnArray.push(o)
-      @log(query + " - Found " + returnArray.length)
-      callback(null, returnArray)
+        returnObject[o.id] = o
 
-  findOne: (conditions, callback)->
+      callback(null, returnObject)
+
+  findOne: (conditions, callback)=>
     @find conditions, (err, rows)->
       return callback(err) if err
-      return callback(null, null) if not rows or rows.length < 1
-      callback(null, rows[0])
+      for id, row of rows
+        return callback(null, row)
+      return callback(null, null)
+
+  findOneById: (id, callback)=>
+    conditions = {}
+    conditions[@pk] = id
+    @findOne conditions, callback
+
 
 module.exports = Collection

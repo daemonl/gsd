@@ -56,7 +56,7 @@ class PathParser
 
     removedParts = []
 
-    cleanedString = path.replace bracketRemover, (x)->
+    cleanedString = (""+path).replace bracketRemover, (x)->
       i = removedParts.length
       removedParts.push(x)
       return "[#{i}]"
@@ -77,14 +77,19 @@ class PathParser
     conditions = []
     tables = {}
 
+    lastModel = null
     walkPart = (parentModel, parentPath, pathParts)->
-      log("PP", parentModel.table, pathParts)
+      lastModel = parentModel
+      #log("PP", parentModel.table, pathParts)
       if pathParts.length < 1
         return
 
       thisPart = pathParts.shift().trim()
       if thisPart is "*"
         thisPart = "(*)"
+
+      if thisPart is "(id)"
+        thisPart = parentModel.pk
 
       firstChar = thisPart.substring(0,1)
       lastChar = thisPart.substring(thisPart.length - 1)
@@ -134,8 +139,7 @@ class PathParser
               tables[modelPath] = {
                 fields: [],
                 mapLabel: parentPath + "." + thisPart
-
-
+                model: field.definition
                 join: {
                   parent: parentPath
                   parentId: thisPart
@@ -151,36 +155,33 @@ class PathParser
           tables[parentPath].fields.push(thisPart)
 
 
-      if (pathParts.length)
-        waklPark(pathParts)
+      #if (pathParts.length)
+      #  walkPart(pathParts)
 
 
-    currentModel = @model[rootPart.name]
-    rootModel = currentModel
-
-
-
+    rootModel = @model[rootPart.name]
     rootPath = rootModel.table
+
     if rootPart.hasOwnProperty('key')
       rootPath = rootPath + "[#{rootPart.key}]"
       conditions.push({tablePath: rootPath, field: rootModel.pk, compare: "=", value: rootPart.key})
     else
       rootPath = rootPath + "[{f0}]"
 
-    tables[rootPath] = {fields: [], mapLabel: rootPath}
+    tables[rootPath] = {fields: [], mapLabel: rootPath, model: rootModel}
 
     walkPart(rootModel, rootPath, parts)
 
-    fields = []
-    joins = []
-
+    for k, table of tables
+      if not (table.model.pk in table.fields)
+        table.fields.unshift(table.model.pk)
 
 
     return callback null, {
         root: rootModel
+        final: lastModel
         tables: tables
         conditions: conditions
       }
-
 
 module.exports = PathParser

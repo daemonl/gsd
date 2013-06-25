@@ -104,13 +104,16 @@ class SessionMiddleware
           req.addFlash "error", @config.security.messages.invalidLogin, ()=>
           return res.redirect(@config.security.paths.login)
 
+        console.log("USER VERIFIED")
         # If Password was valid
         @generateSession req, res, ()=>
           req.session.user = user.id
           console.log(@config.security.groupTable)
           groupCol = @config.model[@config.security.groupTable].pk
           req.session.group = user[groupCol]
+          console.log("POST LOGIN SESSION", req.session, user, groupCol)
           @hidrateSession req, res, ()=>
+            console.log("SESSION HIDRATED")
             res.redirect(@config.security.paths.target)
 
   handleLogout: (req, res)=>
@@ -173,7 +176,7 @@ class SessionMiddleware
         return @sendError(req, res, err) if err
         console.log("Has new session", result)
         req.saveSession = (callback)=>
-          @db.update @config.security.sessionTable, {id: req.session.id}, req.session, (err, res)=>
+          @db.updateOne @config.security.sessionTable, req.session.id, req.session, (err, res)=>
             console.log(err) if err
             console.log("Saved Session")
             callback()
@@ -200,16 +203,17 @@ class SessionMiddleware
         if err
           console.log(err)
           origEnd()
-        sessionCollection.update {id: req.session.id}, req.session, (err)=>
+        sessionCollection.updateOne req.session.id, req.session, (err)=>
           if err
             console.log(err)
           return origEnd.call(res, content)
 
 
     if not (req.session.user and req.session.group)
+      console.log("No User / Group in session")
       return next()
 
-    @sessionRepository.getUserSession req.session.user, (err, userSession)=>
+    @sessionRepository.getUserSession req.session, (err, userSession)=>
       return @sendError(req, res, err) if err
       @sessionRepository.getGroupSession req.session.group, (err, groupSession)=>
         return @sendError(req, res, err) if err

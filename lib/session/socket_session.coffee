@@ -27,13 +27,14 @@ class SocketSession
 
     @db.getEntity @config.security.sessionTable, {id: data.sessionCookie}, (err, session)=>
       return accept(err, false) if err
+      return accept(null, false) if not session
 
       console.log("Session Found:", {id: data.sessionCookie}, session)
 
       if (session and session.user and session.group)
         data.session = session
         # To get here, req.session exists, is valid, and has a user.
-        @sessionRepository.getUserSession data.session.user, (err, userSession)=>
+        @sessionRepository.getUserSession data.session, (err, userSession)=>
           return accept(err, false) if err
           @sessionRepository.getGroupSession data.session.group, (err, groupSession)=>
             return accept(err, false) if err

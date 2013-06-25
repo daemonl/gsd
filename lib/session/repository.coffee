@@ -35,13 +35,13 @@ class SessionRepository
       callback(null, groupSession)
 
 
-  hidrateUserSession: (userId, callback)=>
+  hidrateUserSession: (session, callback)=>
 
     # Create a new User Session Object from the serialized class
-    @db.getEntity @config.security.userTable, {id:userId}, (err, serialized)=>
+    @db.getEntity @config.security.userTable, {id:session.user}, (err, serialized)=>
       return callback(err) if err
-      return callback("User #{userId} not found") if not serialized
-      userSession = new UserSession(serialized)
+      return callback("User #{session.user} not found") if not serialized
+      userSession = new UserSession(serialized, session)
       if userSession is false
         callback("Serialized user session was invalid.")
       else

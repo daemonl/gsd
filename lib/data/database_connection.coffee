@@ -45,16 +45,23 @@ class DatabaseConnection
       callback(null, new Collection(@config, db, collectionName, @log))
 
   query: (query, callback)=>
+    console.log("QUERY: '#{query}'")
     @onDb (db)=>
+
       db.query query, {}, (err, res)->
-        console.log(err)
-        console.log(res)
-        callback(null, res)
+        callback(err, res)
 
   update: (collectionName, conditions, entitySerialized, callback)=>
     @getCollection collectionName, (err, collection)=>
       return callback(err) if err
       collection.update conditions, entitySerialized, (err, result)->
+        return callback(err) if err
+        callback(null, result)
+
+  updateOne: (collectionName, pk, entitySerialized, callback)=>
+    @getCollection collectionName, (err, collection)=>
+      return callback(err) if err
+      collection.updateOne pk, entitySerialized, (err, result)->
         return callback(err) if err
         callback(null, result)
 
@@ -64,6 +71,29 @@ class DatabaseConnection
       collection.findOne conditions, (err, serializedEntity)=>
         return callback(err) if err
         callback(null, serializedEntity)
+
+  escape: (string, callback)=>
+    @onDb (db)=>
+      db.escape(string, callback)
+
+  escapeAll: (strings, callback)=>
+    #ToDo: ASYNCRIFY!
+    rStrings = []
+    next = ()->
+      if strings.length < 1
+        return callback(rStrings)
+      str = strings.shift()
+
+      @escape str, (err, esc)->
+        if err
+          return callback(err)
+        rStrings.push(esc)
+        next()
+
+
+
+
+
 
 
 
