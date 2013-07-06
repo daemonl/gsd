@@ -26,6 +26,7 @@ class SessionRepository
 
   getGroupSession: (groupId, callback)=>
     # Check for an active session
+    
     if @groupSessions.hasOwnProperty(groupId)
       callback(null, @groupSessions[groupId])
       return
@@ -50,17 +51,23 @@ class SessionRepository
 
   hidrateGroupSession: (groupId, callback)=>
     # Create a new Group Session Object from the serialized class
-    @db.getEntity @config.security.groupTable, {id:groupId}, (err, serialized)=>
-      return callback(err) if err
-      if serialized is null
-        callback("No Serialized Group Found")
-        return;
-      groupSession = new GroupSession(@config, serialized, @db)
-      if groupSession is false
-        callback("Serialized group session was invalid.")
-      else
-        @groupSessions[serialized.id] = groupSession
-        callback(null, groupSession)
+    if not @config.security.groupTable
+      groupSession = new GroupSession(@config, {id: 1}, @db)
+      @groupSessions[1] = groupSession
+      console.log("Created null group session - config.security.groupTable was null")
+      callback(null, groupSession)
+    else
+      @db.getEntity @config.security.groupTable, {id:groupId}, (err, serialized)=>
+        return callback(err) if err
+        if serialized is null
+          callback("No Serialized Group Found")
+          return;
+        groupSession = new GroupSession(@config, serialized, @db)
+        if groupSession is false
+          callback("Serialized group session was invalid.")
+        else
+          @groupSessions[serialized.id] = groupSession
+          callback(null, groupSession)
 
 
 module.exports = SessionRepository

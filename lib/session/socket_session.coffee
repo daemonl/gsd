@@ -24,10 +24,14 @@ class SocketSession
     data.signedCookies = connect.utils.parseSignedCookies(cookie.parse(decodeURIComponent(headerCookie)), @config.security.siteSecret)
 
     data.sessionCookie = data.signedCookies[@config.security.sessionCookie]
-
     @db.getEntity @config.security.sessionTable, {id: data.sessionCookie}, (err, session)=>
       return accept(err, false) if err
       return accept(null, false) if not session
+
+
+      if @config.security.groupTable is null
+        session.group = 1
+
 
       console.log("Session Found:", {id: data.sessionCookie}, session)
 
@@ -43,6 +47,9 @@ class SocketSession
             data.sessionGroup = groupSession
             console.log("Accept socket session with user and group")
             accept(null, true)
+      else
+        console.log(session)
+        accept(null, false)
 
 
 

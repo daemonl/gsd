@@ -19,8 +19,8 @@ start = (config)->
   server.app.use(connect['static'](config.publicDir))
 
   server.start()
-  io = socketIo.listen(server.server)
 
+  io = socketIo.listen(server.server)
   socketSession.bindSocket(io)
 
 module.exports = start

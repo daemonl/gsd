@@ -46,19 +46,19 @@ class UserSession
     try
       return @group.list(@, collection, query, callback)
     catch e
-      throw e
+      callback e
       null
 
 
-  set: (collection, id, changeset, callback)=>
-    console.log("SET", collection, id, changeset)
-    if not callback
+  set: (collection, id, changeset, callback = null)=>
+    console.log("SET", collection, id, changeset, callback)
+    if callback is null
       callback = ()->
         null
     try
       return @group.set(@, collection, id, changeset, callback)
     catch e
-      throw e
+      callback(e)
       null
 
   create_new: (path, value, callback)=>

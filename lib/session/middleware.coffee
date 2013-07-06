@@ -71,10 +71,18 @@ class SessionMiddleware
         diff = now.diff(lastUse, "minutes")
 
         if diff < 5
-          req.session = session
+          req.session = {}
+          req.session.id = session.id
+          req.session.user = session.user
+          if @config.security.groupTable isnt null
+            req.session.group = session.group
+          else
+            req.session.group = 1
           req.session_in_database = {}
           for k,v of session
             req.session_in_database[k] = v
+          if req.session.groupTable is null
+            session.group = 1
           return callback()
 
       # Otherwise Generate a new one.
@@ -108,10 +116,14 @@ class SessionMiddleware
         # If Password was valid
         @generateSession req, res, ()=>
           req.session.user = user.id
-          console.log(@config.security.groupTable)
-          groupCol = @config.model[@config.security.groupTable].pk
-          req.session.group = user[groupCol]
-          console.log("POST LOGIN SESSION", req.session, user, groupCol)
+
+          if @config.security.groupTable isnt null
+
+            groupCol = @config.model[@config.security.groupTable].pk
+            req.session.group = user[groupCol]
+          else
+            req.session.group = 1
+
           @hidrateSession req, res, ()=>
             console.log("SESSION HIDRATED")
             res.redirect(@config.security.paths.target)
@@ -186,9 +198,9 @@ class SessionMiddleware
         for k,v of req.session
           req.session_in_database[k] = v
         val = ""+req.session.id
-        val = 's:' + signature.sign(val, @config.security.siteSecret);
-        val = cookie.serialize(@config.security.sessionCookie, val);
-        res.setHeader('Set-Cookie', val);
+        val = 's:' + signature.sign(val, @config.security.siteSecret)
+        val = cookie.serialize(@config.security.sessionCookie, val)
+        res.setHeader('Set-Cookie', val)
         # Then do some cookie things...
         callback()
 
@@ -210,7 +222,8 @@ class SessionMiddleware
 
 
     if not (req.session.user and req.session.group)
-      console.log("No User / Group in session")
+      console.log("No User / Group in session (2)")
+      console.log req.session
       return next()
 
     @sessionRepository.getUserSession req.session, (err, userSession)=>

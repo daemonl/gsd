@@ -5,15 +5,16 @@ class Collection
     if not @config.model.hasOwnProperty(@collectionName)
       throw "Invalid Collection Name: "+@collectionName
     @tableDef = @config.model[@collectionName]
-    @tableName = @tableDef.table
-    @pk = @tableDef.pk
+    @tableName = @tableDef.table or @collectionName
+    @pk = @tableDef.pk or "id"
+
 
   makeWhereString: (conditions)=>
 
     whereBits = []
     for k,v of conditions
       if k is "id"
-        k = @tableDef.pk
+        k = @pk
       whereBits.push("t.#{k} = '#{v}'")
     if whereBits.length < 1
       return ""
@@ -35,8 +36,13 @@ class Collection
     @mysql.query query, setValues, callback
 
   updateOne: (id, fieldsToUpdate, callback)=>
+    if id is null or id is 'null' or not id
+      @insert(fieldsToUpdate, callback)
+      return
+    console.log("Non null id: ", id)
     conditions = {}
     conditions[@pk] = id
+    
     @update(conditions, fieldsToUpdate, callback)
 
   insert: (fields, callback)=>
@@ -47,7 +53,7 @@ class Collection
       returnObject = {}
       for k,v of fields
         returnObject[k] = v
-      returnObject[@tableDef.pk] = res.insertId
+      returnObject[@pk] = res.insertId
       returnObject.id = res.insertId
       callback(err, returnObject)
 
@@ -71,7 +77,7 @@ class Collection
         for field,def of @tableDef.fields
           type = dataTypes[def.type]
           o[field] = type.fromDb(row[field])
-        o.id = o[@tableDef.pk]
+        o.id = o[@pk]
         returnObject[o.id] = o
 
       callback(null, returnObject)

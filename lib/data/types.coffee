@@ -1,34 +1,20 @@
+baseTypes = {}
+
+baseTypes.base = {
+  toDb: (val)->
+    return val
+  fromDb: (val)->
+    return val
+}
+
 dataTypes = {
-  gid: {
-    toDb: (val)->
-      return val
-    fromDb: (val)->
-      return val
-  }
-  id: {
-    toDb: (val)->
-      return val
-    fromDb: (val)->
-      return val
-  }
-  ref: {
-    toDb: (val)->
-      return val
-    fromDb: (val)->
-      return val
-  }
-  datetime: {
-    toDb: (val)->
-      return val
-    fromDb: (val)->
-      return val
-  }
-  string: {
-    toDb: (val)->
-      return val
-    fromDb: (val)->
-      return val
-  }
+  gid: baseTypes.base
+  id: baseTypes.base
+  ref: baseTypes.base
+  datetime: baseTypes.base
+  string: baseTypes.base
+  text: baseTypes.base
+  address: baseTypes.base
   array: {
     toDb: (val)->
       return JSON.stringify(val)

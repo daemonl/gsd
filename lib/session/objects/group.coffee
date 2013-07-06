@@ -48,11 +48,17 @@ class GroupSession
   set: (user, entity, id, changeset, callback)=>
     @db.getCollection entity, (err, collection)=>
       return callback(err) if err
-      collection.updateOne id, changeset, (err)=>
+      collection.updateOne id, changeset, (err, entity)=>
         return callback(err) if err
-        @emitChange(entity, id, changeset)
+        callback(null, entity)
+        @emitChange(entity, id, entity)
+        
 
 
+
+
+
+  #UNUSED:
   create_new: (user, path, object, callback)=>
     @pathParser.parse path, (err, parsed)=>
 
