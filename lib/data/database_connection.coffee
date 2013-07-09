@@ -42,7 +42,7 @@ class DatabaseConnection
 
   getCollection: (collectionName, callback)=>
     @onDb (db)=>
-      callback(null, new Collection(@config, db, collectionName, @log))
+      callback(null, new Collection(@, @config, db, collectionName, @log))
 
   query: (query, callback)=>
     console.log("QUERY: '#{query}'")

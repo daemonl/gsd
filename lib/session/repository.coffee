@@ -39,7 +39,7 @@ class SessionRepository
   hidrateUserSession: (session, callback)=>
 
     # Create a new User Session Object from the serialized class
-    @db.getEntity @config.security.userTable, {id:session.user}, (err, serialized)=>
+    @db.getEntity @config.security.userTable, session.user, (err, serialized)=>
       return callback(err) if err
       return callback("User #{session.user} not found") if not serialized
       userSession = new UserSession(serialized, session)
@@ -57,11 +57,11 @@ class SessionRepository
       console.log("Created null group session - config.security.groupTable was null")
       callback(null, groupSession)
     else
-      @db.getEntity @config.security.groupTable, {id:groupId}, (err, serialized)=>
+      @db.getEntity @config.security.groupTable, groupId, (err, serialized)=>
         return callback(err) if err
         if serialized is null
           callback("No Serialized Group Found")
-          return;
+          return
         groupSession = new GroupSession(@config, serialized, @db)
         if groupSession is false
           callback("Serialized group session was invalid.")

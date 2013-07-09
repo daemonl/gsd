@@ -39,6 +39,11 @@ class GroupSession
       return callback(err) if err
       collection.findOneById id, callback
 
+  getChoicesFor: (user, entity, id, field, search, callback)=>
+    @db.getCollection entity, (err, collection)->
+      return callback(err) if err
+      collection.getChoicesFor id, field, search, callback
+
   list: (user, entity, conditions, callback)=>
     @db.getCollection entity, (err, collection)->
       return callback(err) if err
