@@ -101,7 +101,7 @@ class SessionMiddleware
     searchParams = {}
     searchParams[@config.security.user.username] = username
 
-    @db.getEntity @config.security.userTable, searchParams, (err, user)=>
+    @db.getEntity @config.security.userTable, {filter: searchParams, fieldset: 'login'}, (err, user)=>
       return @sendError(req, res, err) if err
       if not user
         req.addFlash "error", @config.security.messages.invalidLogin, ()=>

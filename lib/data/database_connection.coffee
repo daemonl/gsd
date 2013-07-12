@@ -72,6 +72,11 @@ class DatabaseConnection
         return callback(err) if err
         callback(null, serializedEntity)
 
+  delete: (collectionName, id, callback)=>
+    @getCollection collectionName, (err, collection)=>
+      return callback(err) if err
+      collection.delete id, callback
+
   escape: (string, callback)=>
     @onDb (db)=>
       db.escape(string, callback)

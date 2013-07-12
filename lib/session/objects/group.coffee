@@ -53,11 +53,23 @@ class GroupSession
   set: (user, entity, id, changeset, callback)=>
     @db.getCollection entity, (err, collection)=>
       return callback(err) if err
-      collection.updateOne id, changeset, (err, entity)=>
+      collection.updateOne id, changeset, (err, savedEntity)=>
         return callback(err) if err
         callback(null, entity)
-        @emitChange(entity, id, entity)
+        @emitChange(entity, id, changeset)
         
+
+  delete: (user, entity, id, callback)=>
+    console.log("DEL", entity, id)
+    @get user, entity, id, (err, response, parsed)=>
+
+      if response.length < 1
+        return callback("Data object doesn't exist.")
+      console.log("DELETE ", entity, id)
+      @db.delete entity, id, (err)=>
+        return callback(err) if err
+        @emitDelete(entity, id)
+        callback(null)
 
 
 
@@ -116,21 +128,6 @@ class GroupSession
       doModelField(childModels.shift())
 
 
-  delete: (user, path, callback)=>
-    getIdPath = path + ".(id)"
-    @get user, getIdPath, (err, response, parsed)=>
-
-      if response.length < 1
-        return callback("Data object doesn't exist.")
-
-      pk = walkPath(getIdPath, response)[parsed.final.pk]
-      table = parsed.final
-
-      sql = "DELETE FROM #{parsed.final.table} WHERE #{parsed.final.pk} = #{pk};"
-      @db.query sql, (err, res)=>
-        return callback(err) if err
-        @emitDelete(path)
-        return callback(null, res)
 
   do: (user, path, params, callback)=>
 
@@ -147,9 +144,9 @@ class GroupSession
       for socket in user.sockets
         socket.emit('create', path, insertid, object)
 
-  emitDelete: (path)=>
+  emitDelete: (collection, pk)=>
     for id,user of @activeUsers
       for socket in user.sockets
-        socket.emit('delete', path)
+        socket.emit('delete', collection, pk)
 
 module.exports = GroupSession

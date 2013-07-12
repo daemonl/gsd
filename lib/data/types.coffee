@@ -15,6 +15,8 @@ dataTypes = {
   string: baseTypes.base
   text: baseTypes.base
   address: baseTypes.base
+  enum: baseTypes.base
+  auto_timestamp: baseTypes.base
   array: {
     toDb: (val)->
       return JSON.stringify(val)

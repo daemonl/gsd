@@ -67,7 +67,8 @@ class UserSession
     try
       return @group.set(@, collection, id, changeset, callback)
     catch e
-      callback(e)
+      throw e
+      #callback(e)
       null
 
   create_new: (path, value, callback)=>
@@ -81,12 +82,12 @@ class UserSession
       callback("An unknown error occurred")
       null
 
-  delete: (path, value, callback)=>
+  delete: (collection, id, callback)=>
     if not callback
       callback = ()->
         null
     try
-      return @group.delete(@, path, callback)
+      return @group.delete(@, collection, id, callback)
     catch e
       null
 

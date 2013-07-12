@@ -42,7 +42,7 @@ class Collection
     
     if conditions.hasOwnProperty('filter')
       for k,v of conditions.filter
-        whereConditions.push({field: k, val: c, cmp: "="})
+        whereConditions.push({field: k, val: v, cmp: "="})
 
     if conditions.hasOwnProperty('search')
       searchGroup = []
@@ -114,11 +114,17 @@ class Collection
     @log(query)
     @mysql.query query, fields, postInsert
 
-  find: (conditions, callback)->
+  delete: (id, callback)=>
+    sql = "DELETE FROM #{@tableName} WHERE #{@pk} = #{id};"
+    @mysql.query sql, (err, res)=>
+      return callback(err) if err
+      return callback(null, res)
+
     
+  find: (conditions, callback)->
     # get Fieldset
     fieldset = conditions.fieldset or "default"
-
+    
     if @tableDef.hasOwnProperty("fieldsets") and @tableDef.fieldsets.hasOwnProperty(fieldset)
       fieldList = @tableDef.fieldsets[fieldset]
     else if fieldset is "default"
@@ -177,7 +183,7 @@ class Collection
     query = "SELECT #{selectParts.join()} FROM #{@tableName} t0 #{joinStrings.join(' ')}"
     query = query + @makeWhereString(conditions, map_field)
 
-    @log(query)
+    @log("Using " + fieldset + ": " +  query)
     @mysql.query query, (err, result)=>
       return callback(err) if err
       returnObject = {}

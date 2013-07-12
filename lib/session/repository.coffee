@@ -39,7 +39,7 @@ class SessionRepository
   hidrateUserSession: (session, callback)=>
 
     # Create a new User Session Object from the serialized class
-    @db.getEntity @config.security.userTable, session.user, (err, serialized)=>
+    @db.getEntity @config.security.userTable, {pk: session.user, fieldset: "login"}, (err, serialized)=>
       return callback(err) if err
       return callback("User #{session.user} not found") if not serialized
       userSession = new UserSession(serialized, session)
