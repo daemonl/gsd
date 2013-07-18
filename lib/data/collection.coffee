@@ -24,6 +24,20 @@ class Collection
         strs.push("#{tableRef}#{cond.field} #{cond.cmp} '#{cond.val}'")
     return strs.join(" #{andor} ")
 
+  makePageString: (conditions)=>
+    str = ""
+    limit = false
+    if conditions.hasOwnProperty("limit")
+      limit = parseInt(conditions.limit)
+      str += " LIMIT #{limit}"
+    if conditions.hasOwnProperty("offset")
+      str += " OFFSET #{parseInt(conditions.offset)}"
+    else if conditions.hasOwnProperty("page") and limit
+      page = parseInt(conditions.page)
+      str += " OFFSET #{page * limit}"
+    return str
+
+
   makeWhereString: (conditions, fieldMap = null)=>
     whereConditions = []
     orGroups = []
@@ -45,11 +59,20 @@ class Collection
         whereConditions.push({field: k, val: v, cmp: "="})
 
     if conditions.hasOwnProperty('search')
-      searchGroup = []
-      for fieldName, def in @tableDef.fields
-        if def.type in ['string', 'text']
-          searchGroup.push({field: fieldName, cmp: "LIKE", val: "%#{searchTerm}%"})
-      whereConditions.push(@makeWhereGroup(searchGroup, "OR", fieldMap))
+      for field, term of conditions.search
+        termParts = term.split(" ")
+        searchGroup = []
+        for p in termParts
+          searchGroup.push({field: field, cmp: "LIKE", val: "%#{p}%"})
+        whereConditions.push(@makeWhereGroup(searchGroup, "OR", fieldMap))
+
+
+
+        #for fieldName, def in @tableDef.fields
+        #if def.type in ['string', 'text']
+        #  searchGroup.push({field: fieldName, cmp: "LIKE", val: "%#{searchTerm}%"})
+        #whereConditions.push(@makeWhereGroup(searchGroup, "OR", fieldMap))
+
 
     str = @makeWhereGroup(whereConditions, "AND", fieldMap)
 
@@ -182,6 +205,7 @@ class Collection
    
     query = "SELECT #{selectParts.join()} FROM #{@tableName} t0 #{joinStrings.join(' ')}"
     query = query + @makeWhereString(conditions, map_field)
+    query = query + @makePageString(conditions)
 
     @log("Using " + fieldset + ": " +  query)
     @mysql.query query, (err, result)=>
