@@ -55,8 +55,9 @@ class GroupSession
       return callback(err) if err
       collection.updateOne id, changeset, (err, savedEntity)=>
         return callback(err) if err
-        callback(null, entity)
-        @emitChange(entity, id, changeset)
+        id = savedEntity[collection.pk]
+        callback(null, savedEntity)
+        @emitChange(entity, id, savedEntity)
         
 
   delete: (user, entity, id, callback)=>
