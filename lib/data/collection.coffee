@@ -187,18 +187,36 @@ class Collection
       i_field += 1
       if s.length is 1
         selectParts.push("t0.#{fieldName} as f#{field_index}")
-      else if s.length is 2
-        
-        if not map_table.hasOwnProperty(s)
-          table_index = i_table
-          i_table += 1
-          map_table[s] = table_index
-          refDef = @config.model[def.collection]
-          refPk = @tableDef.pk or "id"
-          joinStrings.push("LEFT JOIN #{def.collection} t#{table_index} ON t#{table_index}.#{refPk} = t0.#{s[0]} ")
 
-        table_index = map_table[s]
-        subFieldName = s[1]
+      else
+
+        lastPart = s.pop()
+
+        currentModel = @tableDef
+        breadcrumb = []
+        baseIndex = 0
+        
+        while s.length
+          part = s.shift()
+          currentDef = currentModel.fields[part]
+          breadcrumb.push(part)
+          currentPath = breadcrumb.join(".")
+          refDef = @config.model[currentDef.collection]
+                            
+          if not map_table.hasOwnProperty(currentPath)
+            table_index = i_table
+            i_table += 1
+            map_table[currentPath] = table_index
+            refPk = currentModel.pk or "id"
+            joinStrings.push("LEFT JOIN #{currentDef.collection} t#{table_index} ON t#{table_index}.#{refPk} = t#{baseIndex}.#{part} ")
+            baseIndex = table_index
+          else
+            baseIndex = map_table[currentPath]
+          currentModel = refDef
+
+
+        table_index = map_table[currentPath]
+        subFieldName = lastPart
         map_field[fieldName].tableRef = "t#{table_index}"
         selectParts.push("t#{table_index}.#{subFieldName} as f#{field_index} ")
 
