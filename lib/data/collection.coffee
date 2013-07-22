@@ -20,8 +20,11 @@ class Collection
         if fieldMap is null
           tableRef = ""
         else
+          if not fieldMap.hasOwnProperty(cond.field)
+            console.log(cond.field)
+            throw "Condition references non mapped field"
           tableRef = fieldMap[cond.field].tableRef + "."
-        strs.push("#{tableRef}#{cond.field} #{cond.cmp} '#{cond.val}'")
+        strs.push("#{tableRef}#{cond.field} #{cond.cmp} #{cond.val}")
     return strs.join(" #{andor} ")
 
   makePageString: (conditions)=>
@@ -52,26 +55,41 @@ class Collection
 
     if conditions.hasOwnProperty('where')
       for cond in conditions.where
-        whereConditions.push(cond)
+        fieldName = fieldMap[cond.field]
+        val = @mysql.escape(cond.val)
+        cmp = cond.cmp || "="
+        if cond.cmp not in ["=", "!=", "<", "<=", ">", ">=", "IS", "LIKE"]
+          cond.cmp = "="
+        whereConditions.push
+          field: fieldName
+          val: val
+          cmp: cmp
     
     if conditions.hasOwnProperty('filter')
-      for k,v of conditions.filter
-        whereConditions.push({field: k, val: v, cmp: "="})
+      for fieldName,v of conditions.filter
+        val = @mysql.escape(v)
+        whereConditions.push({field: fieldName, val: val, cmp: "="})
 
     if conditions.hasOwnProperty('search')
       for field, term of conditions.search
+        term = term.replace(/[^a-zA-Z0-9]/g, " ")
         termParts = term.split(" ")
-        searchGroup = []
-        for p in termParts
-          searchGroup.push({field: field, cmp: "LIKE", val: "%#{p}%"})
-        whereConditions.push(@makeWhereGroup(searchGroup, "OR", fieldMap))
+        
+        if field is "*"
+          searchGroup = []
+          console.log("SEARCH *", term)
+          for fieldName, def of @tableDef.fields
+            if def.type in ['string', 'text']
+              searchGroup.push({field: fieldName, cmp: "LIKE", val: "%#{term}%"})
+          whereConditions.push(@makeWhereGroup(searchGroup, "OR", fieldMap))
+
+        else
+          searchGroup = []
+          for p in termParts
+            searchGroup.push({field: field, cmp: "LIKE", val: "%#{p}%"})
+          whereConditions.push(@makeWhereGroup(searchGroup, "OR", fieldMap))
 
 
-
-        #for fieldName, def in @tableDef.fields
-        #if def.type in ['string', 'text']
-        #  searchGroup.push({field: fieldName, cmp: "LIKE", val: "%#{searchTerm}%"})
-        #whereConditions.push(@makeWhereGroup(searchGroup, "OR", fieldMap))
 
 
     str = @makeWhereGroup(whereConditions, "AND", fieldMap)
@@ -108,7 +126,9 @@ class Collection
     u = setFields.join(", ")
     query = "UPDATE #{@tableName} t SET #{u} #{c}"
     @log query
-    @mysql.query query, setValues, callback
+    @mysql.query query, setValues, (err, res)->
+      return callback(err) if err
+      callback(null, fieldsToUpdate)
 
   updateOne: (id, fieldsToUpdate, callback)=>
     if id is null or id is 'null' or not id
@@ -116,7 +136,10 @@ class Collection
       return
     console.log("Non null id: ", id)
     
-    @update({pk: id}, fieldsToUpdate, callback)
+    @update {pk: id}, fieldsToUpdate, (err, res)=>
+      return callback(err) if err
+      fieldsToUpdate[@pk] = id
+      callback(null, fieldsToUpdate)
 
   insert: (fields, callback)=>
     postInsert = (err, res)=>
@@ -258,7 +281,7 @@ class Collection
 
     collection = @databaseConnection.getCollection field.collection, (err, collection)->
       return callback(err) if err
-      collection.find({search: search}, callback)
+      collection.find({search: {"*": search}}, callback)
 
 
 module.exports = Collection
