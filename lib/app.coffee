@@ -9,6 +9,7 @@ connect = require("connect")
 socketIo = require('socket.io')
 
 
+
 start = (config)->
 
   databaseConnection = new DatabaseConnection(config)
@@ -23,4 +24,5 @@ start = (config)->
   io = socketIo.listen(server.server)
   socketSession.bindSocket(io)
 
+start.sync = require("./data/syncdb")
 module.exports = start
