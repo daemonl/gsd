@@ -7,10 +7,21 @@ baseTypes.base = {
     return val
 }
 
+baseTypes.int =
+  toDb: (val)->
+    return null if val is null or val.length < 1
+    return val/1
+  fromDb: (val)->
+    return null if val is null or val.length < 1
+    return val
+
+
+
+
 dataTypes = {
   gid: baseTypes.base
-  id: baseTypes.base
-  ref: baseTypes.base
+  id: baseTypes.int
+  ref: baseTypes.int
   datetime: baseTypes.base
   string: baseTypes.base
   text: baseTypes.base
