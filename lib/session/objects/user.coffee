@@ -1,4 +1,4 @@
-
+Moment = require("moment")
 class UserSession
 
   group: null
@@ -24,6 +24,8 @@ class UserSession
     socket.on 'do', @do
     socket.on 'heartbeat', ()=>
 
+
+      @session.last = new Moment().format("YYYY-MM-DDTHH:mm:ss")
       @group.db.update @config.security.sessionTable, {id: @session.id}, @session, (err, res)=>
         console.log(err) if err
         console.log("Saved Session")
