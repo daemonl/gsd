@@ -78,15 +78,15 @@ class Collection
         if field is "*"
           searchGroup = []
           console.log("SEARCH *", term)
-          for fieldName, def of @tableDef.fields
-            if def.type in ['string', 'text']
-              searchGroup.push({field: fieldName, cmp: "LIKE", val: "%#{term}%"})
+          for fieldName, field of fieldMap
+            if field.def.type in ['string', 'text']
+              searchGroup.push({field: fieldName, cmp: "LIKE", val: "'%#{term}%'"})
           whereConditions.push(@makeWhereGroup(searchGroup, "OR", fieldMap))
 
         else
           searchGroup = []
           for p in termParts
-            searchGroup.push({field: field, cmp: "LIKE", val: "%#{p}%"})
+            searchGroup.push({field: field, cmp: "LIKE", val: "'%#{p}%'"})
           whereConditions.push(@makeWhereGroup(searchGroup, "OR", fieldMap))
 
 
