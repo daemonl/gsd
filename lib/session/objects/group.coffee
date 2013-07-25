@@ -34,10 +34,10 @@ class GroupSession
   addUser: (user)=>
     @activeUsers[user.serialized._id] = user
 
-  get: (user, entity, id, callback)=>
+  get: (user, entity, id, fieldset, callback)=>
     @db.getCollection entity, (err, collection)->
       return callback(err) if err
-      collection.findOneById id, callback
+      collection.findOneById id, fieldset, callback
 
   getChoicesFor: (user, entity, id, field, search, callback)=>
     @db.getCollection entity, (err, collection)->

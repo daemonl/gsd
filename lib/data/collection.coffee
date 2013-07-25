@@ -269,8 +269,8 @@ class Collection
         return callback(null, row)
       return callback(null, null)
 
-  findOneById: (id, callback)=>
-    @findOne {pk: id}, callback
+  findOneById: (id, fieldset, callback)=>
+    @findOne {pk: id, fieldset: fieldset}, callback
 
   getChoicesFor: (id, fieldName, search, callback)=>
     if not @tableDef.fields.hasOwnProperty(fieldName)

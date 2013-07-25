@@ -32,10 +32,10 @@ class UserSession
 
 
 
-  get: (collection, id, callback)=>
+  get: (collection, id, fieldset, callback)=>
     console.log("GET", collection, id)
     try
-      @group.get @, collection, id, (err, entity)->
+      @group.get @, collection, id, fieldset, (err, entity)->
         callback(err, entity)
         throw err if err
     catch e
