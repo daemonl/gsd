@@ -22,7 +22,7 @@ class Collection
           fieldName = cond.field
         else
           if not fieldMap.hasOwnProperty(cond.field)
-            console.log(cond.field)
+            console.log(cond)
             throw "Condition references non mapped field"
           tableRef = fieldMap[cond.field].tableRef + "."
           fieldName = cond.field.split(".").pop()
@@ -68,7 +68,7 @@ class Collection
           cmp: cmp
     
     if conditions.hasOwnProperty('filter')
-      for fieldName,v of conditions.filter
+      for fieldName, v of conditions.filter
         val = @mysql.escape(v)
         whereConditions.push({field: fieldName, val: val, cmp: "="})
 
