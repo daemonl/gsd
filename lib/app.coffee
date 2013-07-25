@@ -25,4 +25,8 @@ start = (config)->
   socketSession.bindSocket(io)
 
 start.sync = require("./data/syncdb")
+start.passwd = (password, callback)->
+  scrypt = require('scrypt')
+  scrypt.passwordHash password, 0.1, callback
+
 module.exports = start
