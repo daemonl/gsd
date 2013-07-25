@@ -19,12 +19,14 @@ class Collection
         cond.cmp = cond.cmp || "="
         if fieldMap is null
           tableRef = ""
+          fieldName = cond.field
         else
           if not fieldMap.hasOwnProperty(cond.field)
             console.log(cond.field)
             throw "Condition references non mapped field"
           tableRef = fieldMap[cond.field].tableRef + "."
-        strs.push("#{tableRef}#{cond.field} #{cond.cmp} #{cond.val}")
+          fieldName = cond.field.split(".").pop()
+        strs.push("#{tableRef}#{fieldName} #{cond.cmp} #{cond.val}")
     return strs.join(" #{andor} ")
 
   makePageString: (conditions)=>
@@ -72,16 +74,29 @@ class Collection
 
     if conditions.hasOwnProperty('search')
       for field, term of conditions.search
+
+        partGroup = []
+
         term = term.replace(/[^a-zA-Z0-9]/g, " ")
         termParts = term.split(" ")
         
         if field is "*"
-          searchGroup = []
-          console.log("SEARCH *", term)
-          for fieldName, field of fieldMap
-            if field.def.type in ['string', 'text']
-              searchGroup.push({field: fieldName, cmp: "LIKE", val: "'%#{term}%'"})
-          whereConditions.push(@makeWhereGroup(searchGroup, "OR", fieldMap))
+
+          if /^[0-9]*$/.test(term)
+            id = +term
+            whereConditions.push({field: @pk, cmp: "=", val: id})
+          else
+
+            searchGroup = []
+     
+            for termPart in termParts
+              partGroup = []
+              for fieldName, field of fieldMap
+                if field.def.type in ['string', 'text']
+                  partGroup.push({field: fieldName, cmp: "LIKE", val: "'%#{termPart}%'"})
+
+              searchGroup.push(@makeWhereGroup(partGroup, "OR", fieldMap))
+            whereConditions.push(@makeWhereGroup(searchGroup, "AND", fieldMap))
 
         else
           searchGroup = []
@@ -212,7 +227,6 @@ class Collection
         selectParts.push("t0.#{fieldName} as f#{field_index}")
 
       else
-
         lastPart = s.pop()
 
         currentModel = @tableDef
@@ -238,11 +252,14 @@ class Collection
           currentModel = refDef
 
 
+          map_field[fieldName].def = refDef.fields[lastPart]
+
         table_index = map_table[currentPath]
         subFieldName = lastPart
         map_field[fieldName].tableRef = "t#{table_index}"
         selectParts.push("t#{table_index}.#{subFieldName} as f#{field_index} ")
 
+    console.log(map_field)
    
     query = "SELECT #{selectParts.join()} FROM #{@tableName} t0 #{joinStrings.join(' ')}"
     query = query + @makeWhereString(conditions, map_field)
@@ -274,14 +291,25 @@ class Collection
 
   getChoicesFor: (id, fieldName, search, callback)=>
     if not @tableDef.fields.hasOwnProperty(fieldName)
-      return callback("Field #{fieldName} doesn't exist in #{@tableName}")
+      process.nextTick ()->
+        callback("Field #{fieldName} doesn't exist in #{@tableName}")
+      return
+
     field = @tableDef.fields[fieldName]
     if field.type isnt 'ref'
-      return callback("Field #{fieldName} in #{@tableName} isn't a ref type")
+      process.nextTick ()->
+        callback("Field #{fieldName} in #{@tableName} isn't a ref type")
+      return
 
     collection = @databaseConnection.getCollection field.collection, (err, collection)->
       return callback(err) if err
-      collection.find({search: {"*": search}}, callback)
+      if collection.tableDef.fieldsets.hasOwnProperty('search')
+        fieldset = 'quicklist'
+      else if collection.tableDef.fieldsets.hasOwnProperty('table')
+        fieldset = 'table'
+      else
+        fieldset = 'default'
+      collection.find({fieldset: fieldset, search: {"*": search}}, callback)
 
 
 module.exports = Collection
