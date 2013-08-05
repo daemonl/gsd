@@ -29,9 +29,26 @@ class Collection
         strs.push("#{tableRef}#{fieldName} #{cond.cmp} #{cond.val}")
     return strs.join(" #{andor} ")
 
-  makePageString: (conditions)=>
+  makePageString: (conditions, fieldMap)=>
     str = ""
     limit = false
+    
+    if conditions.hasOwnProperty("sort")
+      ob = "ORDER BY "
+      for sort in conditions.sort
+        if sort.direction and sort.direction is -1
+          direction = "DESC"
+        else
+          direction = "ASC"
+
+        if not fieldMap.hasOwnProperty(sort.fieldName)
+          throw "Sort references non mapped field"
+        map = fieldMap[sort.fieldName]
+        col = map.key
+
+        str += " #{ob}#{col} #{direction}"
+        ob = ""
+
     if conditions.hasOwnProperty("limit")
       limit = parseInt(conditions.limit)
       str += " LIMIT #{limit}"
@@ -40,6 +57,7 @@ class Collection
     else if conditions.hasOwnProperty("page") and limit
       page = parseInt(conditions.page)
       str += " OFFSET #{page * limit}"
+
     return str
 
 
@@ -246,6 +264,12 @@ class Collection
             map_table[currentPath] = table_index
             refPk = currentModel.pk or "id"
             joinStrings.push("LEFT JOIN #{currentDef.collection} t#{table_index} ON t#{table_index}.#{refPk} = t#{baseIndex}.#{part} ")
+            map_field[currentPath + "." + refPk] =
+              def: currentModel.fields[refPk]
+              key: "f"+i_field
+              tableRef: "t"+table_index
+            selectParts.push("t#{table_index}.#{refPk} as f#{i_field} ")
+            i_field += 1
             baseIndex = table_index
           else
             baseIndex = map_table[currentPath]
@@ -263,18 +287,21 @@ class Collection
    
     query = "SELECT #{selectParts.join()} FROM #{@tableName} t0 #{joinStrings.join(' ')}"
     query = query + @makeWhereString(conditions, map_field)
-    query = query + @makePageString(conditions)
+    query = query + @makePageString(conditions, map_field)
 
     @log("Using " + fieldset + ": " +  query)
     @mysql.query query, (err, result)=>
       return callback(err) if err
       returnObject = {}
+      sortIndex = 0
       for row in result
         o = {}
         for real, field of map_field
           type = dataTypes[field.def.type]
           o[real] = type.fromDb(row[field.key])
         o.id = o[@pk]
+        o.sortIndex = sortIndex
+        sortIndex += 1
         returnObject[o.id] = o
 
       callback(null, returnObject)
