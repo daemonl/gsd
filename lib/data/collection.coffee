@@ -47,7 +47,7 @@ class Collection
         col = map.key
 
         str += " #{ob}#{col} #{direction}"
-        ob = ""
+        ob = ", "
 
     if conditions.hasOwnProperty("limit")
       limit = parseInt(conditions.limit)
