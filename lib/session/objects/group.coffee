@@ -1,27 +1,6 @@
 PathParser = require('../path_parser')
 
 
-walkPath = (path, obj)->
-  obj = obj[0]
-  #path = path.replace("]","")
-  #path = path.replace("[", ".")
-
-  parts = path.split(".")
-
-  for part in parts
-    if obj.hasOwnProperty(part)
-      obj = obj[part]
-    else
-      char1 = part.substr(0, 1)
-      if char1 is "*" or char1 is "("
-        return obj
-      else
-        return null
-
-  return obj
-
-
-
 class GroupSession
 
   activeUsers: {}
@@ -30,40 +9,46 @@ class GroupSession
     @pathParser = new PathParser(@config.model)
     return @
 
-
   addUser: (user)=>
-    @activeUsers[user.serialized._id] = user
+    @activeUsers[user.serialized.id] = user
 
+  getContext: (user)->
+    parameters =
+      user: user.serialized.id
+      group: @serialized.id
+ 
   get: (user, entity, id, fieldset, callback)=>
+    context = @getContext(user)
     @db.getCollection entity, (err, collection)->
       return callback(err) if err
-      collection.findOneById id, fieldset, callback
+      collection.findOneById context, id, fieldset, callback
 
   getChoicesFor: (user, entity, id, field, search, callback)=>
+    context = @getContext(user)
     @db.getCollection entity, (err, collection)->
       return callback(err) if err
-      collection.getChoicesFor id, field, search, callback
+      collection.getChoicesFor context, id, field, search, callback
 
   list: (user, entity, conditions, callback)=>
+    context = @getContext(user)
     @db.getCollection entity, (err, collection)->
       return callback(err) if err
-      collection.find(conditions, callback)
-
+      collection.find context, conditions, callback
 
   set: (user, entity, id, changeset, callback)=>
+    context = @getContext(user)
     @db.getCollection entity, (err, collection)=>
       return callback(err) if err
-      collection.updateOne id, changeset, (err, savedEntity)=>
+      collection.updateOne context, id, changeset, (err, savedEntity)=>
         return callback(err) if err
         id = savedEntity[collection.pk]
         callback(null, savedEntity)
-        @emitChange(entity, id, savedEntity)
+        @emitChange(entity, id)
         
 
   delete: (user, entity, id, callback)=>
     console.log("DEL", entity, id)
     @get user, entity, id, (err, response, parsed)=>
-
       if response.length < 1
         return callback("Data object doesn't exist.")
       console.log("DELETE ", entity, id)
@@ -72,78 +57,17 @@ class GroupSession
         @emitDelete(entity, id)
         callback(null)
 
-
-
-
-
-  #UNUSED:
-  create_new: (user, path, object, callback)=>
-    @pathParser.parse path, (err, parsed)=>
-
-      table = parsed.final
-
-      childModels = []
-      fields = []
-      for k,v of object
-        console.log(k)
-        if table.fields.hasOwnProperty(k)
-
-          field = table.fields[k]
-          if field.type is "model"
-            childModels.push {
-              field: k
-              value: v
-              path: path + "." + k
-            }
-
-          else
-            #TODO: ESCAPE PROPERLY!
-
-            esc = (""+v).replace("\"", "\\\"")
-            fields.push("#{k} = \"#{esc}\"")
-      console.log("N")
-
-      doModelField = (field)=>
-        if field is undefined
-
-          fields.push("#{parsed.final.pk} = NULL")
-
-          sql = "INSERT INTO #{parsed.final.table} SET #{fields.join(", ")};"
-          console.log("SQL:", sql)
-
-          @db.query sql, (err, res)=>
-            return callback(err) if err
-            @emitCreate(path, res.insertId, object)
-
-            return callback(null, res)
-        else
-
-          @create_new user, field.path, field.value, (err, res)=>
-
-            id = res.insertId
-            #[Parent Object Fields].push [Field's fieldname in object] = [insert id]
-            fields.push("#{field.field} = \"#{id}\"")
-
-            doModelField(childModels.shift())
-
-      doModelField(childModels.shift())
-
-
-
-  do: (user, path, params, callback)=>
-
-
-  emitChange: (collection, pk, changeset)=>
+  emitChange: (collection, pk)=>
     for id,user of @activeUsers
       for socket in user.sockets
-        socket.emit('update', collection, pk, changeset)
+        socket.emit('update', collection, pk)
 
-  emitCreate: (path, insertid, object)=>
+  emitCreate: (collection, id)=>
     if not object
       object = {}
     for id,user of @activeUsers
       for socket in user.sockets
-        socket.emit('create', path, insertid, object)
+        socket.emit('create', collection, id)
 
   emitDelete: (collection, pk)=>
     for id,user of @activeUsers

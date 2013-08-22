@@ -26,14 +26,16 @@ class UserSession
 
 
       @session.last = new Moment().format("YYYY-MM-DDTHH:mm:ss")
-      @group.db.update @config.security.sessionTable, {id: @session.id}, @session, (err, res)=>
+      changeset =
+        last: @session.last
+      @group.db.update @config.security.sessionTable, {id: @session.id}, changeset, (err, res)=>
         console.log(err) if err
         console.log("Saved Session")
 
 
 
   get: (collection, id, fieldset, callback)=>
-    console.log("GET", collection, id)
+    console.log("GET", collection, fieldset, id)
     try
       @group.get @, collection, id, fieldset, (err, entity)->
         callback(err, entity)

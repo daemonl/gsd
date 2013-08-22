@@ -54,28 +54,28 @@ class DatabaseConnection
   update: (collectionName, conditions, entitySerialized, callback)=>
     @getCollection collectionName, (err, collection)=>
       return callback(err) if err
-      collection.update conditions, entitySerialized, (err, result)->
+      collection.update {}, conditions, entitySerialized, (err, result)->
         return callback(err) if err
         callback(null, result)
 
   updateOne: (collectionName, pk, entitySerialized, callback)=>
     @getCollection collectionName, (err, collection)=>
       return callback(err) if err
-      collection.updateOne pk, entitySerialized, (err, result)->
+      collection.updateOne {}, pk, entitySerialized, (err, result)->
         return callback(err) if err
         callback(null, result)
 
   getEntity: (collectionName, conditions, callback)=>
     @getCollection collectionName, (err, collection)=>
       return callback(err) if err
-      collection.findOne conditions, (err, serializedEntity)=>
+      collection.findOne {}, conditions, (err, serializedEntity)=>
         return callback(err) if err
         callback(null, serializedEntity)
 
   delete: (collectionName, id, callback)=>
     @getCollection collectionName, (err, collection)=>
       return callback(err) if err
-      collection.delete id, callback
+      collection.delete {}, id, callback
 
   escape: (string, callback)=>
     @onDb (db)=>

@@ -66,8 +66,9 @@ class SessionMiddleware
 
       # If the session matched
       if (session)
-        lastUse = new Moment(session.last)
+        lastUse = new Moment(session.last * 1000)
         now = new Moment()
+        console.log lastUse.format("YYYY-DD-MM hh-mm-ss")
         diff = now.diff(lastUse, "minutes")
 
         if diff < 5
@@ -164,7 +165,7 @@ class SessionMiddleware
         @db.getCollection @config.security.groupTable, (err, groupCollection)=>
           return @sendError(req, res, err) if err
           groupObj = {}
-          groupCollection.insert groupObj, (err, groupObject)=>
+          groupCollection.insert {}, groupObj, (err, groupObject)=>
 
             @db.getCollection @config.security.userTable, (err, userCollection)=>
               return rejectSignup(err) if err
@@ -172,7 +173,7 @@ class SessionMiddleware
               userObj[@config.security.user.username] = username
               userObj[@config.security.user.password] = pwdhash
               userObj[@config.security.groupTable + "_id"] = groupObject.id
-              userCollection.insert userObj, (err)=>
+              userCollection.insert {}, userObj, (err)=>
                 return rejectSignup(err) if err
                 @handlePostLogin(req, res)
 
@@ -184,11 +185,16 @@ class SessionMiddleware
       return @sendError(req, res, err) if err
 
       serializedSession = {}
-      sessionCollection.insert serializedSession, (err, result)=>
+      sessionCollection.insert {}, serializedSession, (err, result)=>
         return @sendError(req, res, err) if err
         console.log("Has new session", result)
         req.saveSession = (callback)=>
-          @db.updateOne @config.security.sessionTable, req.session.id, req.session, (err, res)=>
+          changeset =
+            user: req.session.user
+            flash: req.session.flash
+            last: req.session.last
+
+          @db.updateOne @config.security.sessionTable, req.session.id, changeset, (err, res)=>
             console.log(err) if err
             console.log("Saved Session")
             callback()
@@ -215,7 +221,7 @@ class SessionMiddleware
         if err
           console.log(err)
           origEnd()
-        sessionCollection.updateOne req.session.id, req.session, (err)=>
+        sessionCollection.updateOne {}, req.session.id, req.session, (err)=>
           if err
             console.log(err)
           return origEnd.call(res, content)

@@ -1,5 +1,5 @@
 dataTypes = require('./types')
-
+Query = require('./query_builder')
 class Collection
   constructor: (@databaseConnection, @config, @mysql, @collectionName, @log)->
     if not @config.model.hasOwnProperty(@collectionName)
@@ -8,173 +8,55 @@ class Collection
     @tableName = @tableDef.table or @collectionName
     @pk = @tableDef.pk or "id"
 
+  getQuery: (context, fieldList)=>
+    return new Query(@mysql, context, @config.model, @collectionName, fieldList)
+  
+  getFieldList: (fieldset)=>
+    # get Fieldset
+    if @tableDef.hasOwnProperty("fieldsets") and @tableDef.fieldsets.hasOwnProperty(fieldset)
+      fieldList = @tableDef.fieldsets[fieldset]
+    else if fieldset is "default"
+      fieldList = []
+      for k,v of @tableDef.fields
+        fieldList.push(k)
+    else
+      throw "Fieldset #{fieldset} doesn't exist for #{@tableName}"
 
-  makeWhereGroup: (list, andor, fieldMap)->
-    strs = []
-    for cond in list
-      if typeof cond is "string"
-        if cond.length > 0
-          strs.push("(#{cond})")
-      else
-        cond.cmp = cond.cmp || "="
-        if fieldMap is null
-          tableRef = ""
-          fieldName = cond.field
-        else
-          if not fieldMap.hasOwnProperty(cond.field)
-            console.log(cond)
-            throw "Condition references non mapped field"
-          tableRef = fieldMap[cond.field].tableRef + "."
-          fieldName = cond.field.split(".").pop()
-        strs.push("#{tableRef}#{fieldName} #{cond.cmp} #{cond.val}")
-    return strs.join(" #{andor} ")
+    if @pk not in fieldList
+      fieldList.push(@pk)
 
-  makePageString: (conditions, fieldMap)=>
-    str = ""
-    limit = false
-    
-    if conditions.hasOwnProperty("sort")
-      ob = "ORDER BY "
-      for sort in conditions.sort
-        if sort.direction and sort.direction is -1
-          direction = "DESC"
-        else
-          direction = "ASC"
-
-        if not fieldMap.hasOwnProperty(sort.fieldName)
-          throw "Sort references non mapped field"
-        map = fieldMap[sort.fieldName]
-        col = map.key
-
-        str += " #{ob}#{col} #{direction}"
-        ob = ", "
-
-    if conditions.hasOwnProperty("limit")
-      limit = parseInt(conditions.limit)
-      str += " LIMIT #{limit}"
-    if conditions.hasOwnProperty("offset")
-      str += " OFFSET #{parseInt(conditions.offset)}"
-    else if conditions.hasOwnProperty("page") and limit
-      page = parseInt(conditions.page)
-      str += " OFFSET #{page * limit}"
-
-    return str
+    console.log(fieldList)
+    return fieldList
 
 
-  makeWhereString: (conditions, fieldMap = null)=>
-    whereConditions = []
-    orGroups = []
+  update: (context, conditions, fieldsToUpdate, callback)=>
 
-    if typeof conditions isnt "object"
-      conditions = {pk: conditions}
-    if conditions.hasOwnProperty('id')
-      conditions.pk = conditions.id
+    try
+      query = @getQuery(context, @getFieldList("default"))
+    catch e
+      return callback(e)
+    query.buildUpdate conditions, fieldsToUpdate, (err, sql)=>
+      if err
+        console.log(err)
+        callback(err)
+        return
 
-    if conditions.hasOwnProperty('pk')
-      whereConditions.push({field: @pk, cmp: "=", val: conditions.pk})
+      console.log(sql)
+      @mysql.query sql, (err, res)->
+        return callback(err) if err
+        callback(null, fieldsToUpdate)
 
-    if conditions.hasOwnProperty('where')
-      for cond in conditions.where
-        fieldName = fieldMap[cond.field]
-        val = @mysql.escape(cond.val)
-        cmp = cond.cmp || "="
-        if cond.cmp not in ["=", "!=", "<", "<=", ">", ">=", "IS", "LIKE"]
-          cond.cmp = "="
-        whereConditions.push
-          field: fieldName
-          val: val
-          cmp: cmp
-    
-    if conditions.hasOwnProperty('filter')
-      for fieldName, v of conditions.filter
-        val = @mysql.escape(v)
-        whereConditions.push({field: fieldName, val: val, cmp: "="})
-
-    if conditions.hasOwnProperty('search')
-      for field, term of conditions.search
-
-        partGroup = []
-
-        term = term.replace(/[^a-zA-Z0-9]/g, " ")
-        termParts = term.split(" ")
-        
-        if field is "*"
-
-          if /^[0-9]*$/.test(term)
-            id = +term
-            whereConditions.push({field: @pk, cmp: "=", val: id})
-          else
-
-            searchGroup = []
-     
-            for termPart in termParts
-              partGroup = []
-              for fieldName, field of fieldMap
-                if field.def.type in ['string', 'text']
-                  partGroup.push({field: fieldName, cmp: "LIKE", val: "'%#{termPart}%'"})
-
-              searchGroup.push(@makeWhereGroup(partGroup, "OR", fieldMap))
-            whereConditions.push(@makeWhereGroup(searchGroup, "AND", fieldMap))
-
-        else
-          searchGroup = []
-          for p in termParts
-            searchGroup.push({field: field, cmp: "LIKE", val: "'%#{p}%'"})
-          whereConditions.push(@makeWhereGroup(searchGroup, "OR", fieldMap))
-
-
-
-
-    str = @makeWhereGroup(whereConditions, "AND", fieldMap)
-
-    if str.length < 1
-      return ""
-    return "WHERE " + str
-
-  getRefJoins: (t)=>
-    joins = []
-    symbols = {}
-    j = 1
-    for fieldName, def of @tableDef.fields
-      continue if def.type isnt "ref"
-            
-    return {
-      joinString: joins.join(" ")+" "
-      symbols: symbols
-    }
-    
-
-
-
-  update: (conditions, fieldsToUpdate, callback)=>
-    c = @makeWhereString(conditions)
-    setFields = []
-    setValues = []
-    for k,v of fieldsToUpdate
-      if @tableDef.fields.hasOwnProperty(k)
-        setFields.push("t.#{k} = ?")
-        def = @tableDef.fields[k]
-        type = dataTypes[def.type]
-        setValues.push(type.toDb(v))
-    u = setFields.join(", ")
-    query = "UPDATE #{@tableName} t SET #{u} #{c}"
-    @log query
-    @mysql.query query, setValues, (err, res)->
-      return callback(err) if err
-      callback(null, fieldsToUpdate)
-
-  updateOne: (id, fieldsToUpdate, callback)=>
+  updateOne: (context, id, fieldsToUpdate, callback)=>
     if id is null or id is 'null' or not id
-      @insert(fieldsToUpdate, callback)
+      @insert(context, fieldsToUpdate, callback)
       return
-    console.log("Non null id: ", id)
     
-    @update {pk: id}, fieldsToUpdate, (err, res)=>
+    @update context, {pk: id}, fieldsToUpdate, (err, res)=>
       return callback(err) if err
       fieldsToUpdate[@pk] = id
       callback(null, fieldsToUpdate)
 
-  insert: (fields, callback)=>
+  insert: (context, fields, callback)=>
     postInsert = (err, res)=>
       if err
         @log err
@@ -189,134 +71,64 @@ class Collection
     if Object.keys(fields).length < 1
       return @mysql.query "INSERT INTO #{@tableName} VALUES ()", null, postInsert
 
+    setFields = {}
+    for k,v of fields
+      if @tableDef.fields.hasOwnProperty(k)
+        def = @tableDef.fields[k]
+        type = dataTypes[def.type]
+        setFields[k] = type.toDb(v)
+
     query = "INSERT INTO #{@tableName} SET ?"
     @log(query)
-    @mysql.query query, fields, postInsert
+    @mysql.query query, setFields, postInsert
 
-  delete: (id, callback)=>
+  delete: (context, id, callback)=>
     sql = "DELETE FROM #{@tableName} WHERE #{@pk} = #{id};"
     @mysql.query sql, (err, res)=>
       return callback(err) if err
       return callback(null, res)
 
     
-  find: (conditions, callback)->
-    # get Fieldset
-    fieldset = conditions.fieldset or "default"
-    
-    if @tableDef.hasOwnProperty("fieldsets") and @tableDef.fieldsets.hasOwnProperty(fieldset)
-      fieldList = @tableDef.fieldsets[fieldset]
-    else if fieldset is "default"
-      fieldList = []
-      for k,v of @tableDef.fields
-        fieldList.push(k)
-    else
-      return callback("Fieldset #{fieldset} doesn't exist for #{@tableName}")
+  find: (context, conditions, callback)->
 
-    if @pk not in fieldList
-      fieldList.push(@pk)
-    i_table = 1 # 0 is the focus entity
-    i_field = 0
+    try
+      fieldList = @getFieldList(conditions.fieldset or "default")
+      query = @getQuery(context, fieldList)
+    catch e
+      return callback(e)
 
-    map_table = {}
-    map_field = {}
-    
+    query.build conditions, (err, sql)=>
+      if err
+        console.log(err)
+        callback(err)
+        return
+      console.log(sql)
 
-    selectParts = []
-    joinStrings = []
+      @mysql.query sql, (err, result)=>
+        if err
+          return callback(err)
+        ret = {}
+        sortIndex = 0
+        for row in result
+          obj = query.unPack(row)
+          obj.sortIndex = sortIndex
+          sortIndex += 1
+          ret[obj.id] = obj
 
-    
-    for fieldName in fieldList
-      s = fieldName.split(".")
-      if s.length < 1
-        continue
-      if not @tableDef.fields.hasOwnProperty(s[0])
-        continue
-      def = @tableDef.fields[s[0]]
-      field_index = i_field
-      
-      map_field[fieldName] =
-        def: def
-        key: "f"+field_index
-        tableRef: "t0"
+        callback(null, ret)
 
-      i_field += 1
-      if s.length is 1
-        selectParts.push("t0.#{fieldName} as f#{field_index}")
-
-      else
-        lastPart = s.pop()
-
-        currentModel = @tableDef
-        breadcrumb = []
-        baseIndex = 0
-        
-        while s.length
-          part = s.shift()
-          currentDef = currentModel.fields[part]
-          breadcrumb.push(part)
-          currentPath = breadcrumb.join(".")
-          refDef = @config.model[currentDef.collection]
-                            
-          if not map_table.hasOwnProperty(currentPath)
-            table_index = i_table
-            i_table += 1
-            map_table[currentPath] = table_index
-            refPk = currentModel.pk or "id"
-            joinStrings.push("LEFT JOIN #{currentDef.collection} t#{table_index} ON t#{table_index}.#{refPk} = t#{baseIndex}.#{part} ")
-            map_field[currentPath + "." + refPk] =
-              def: currentModel.fields[refPk]
-              key: "f"+i_field
-              tableRef: "t"+table_index
-            selectParts.push("t#{table_index}.#{refPk} as f#{i_field} ")
-            i_field += 1
-            baseIndex = table_index
-          else
-            baseIndex = map_table[currentPath]
-          currentModel = refDef
-
-
-          map_field[fieldName].def = refDef.fields[lastPart]
-
-        table_index = map_table[currentPath]
-        subFieldName = lastPart
-        map_field[fieldName].tableRef = "t#{table_index}"
-        selectParts.push("t#{table_index}.#{subFieldName} as f#{field_index} ")
-
-    console.log(map_field)
-   
-    query = "SELECT #{selectParts.join()} FROM #{@tableName} t0 #{joinStrings.join(' ')}"
-    query = query + @makeWhereString(conditions, map_field)
-    query = query + @makePageString(conditions, map_field)
-
-    @log("Using " + fieldset + ": " +  query)
-    @mysql.query query, (err, result)=>
-      return callback(err) if err
-      returnObject = {}
-      sortIndex = 0
-      for row in result
-        o = {}
-        for real, field of map_field
-          type = dataTypes[field.def.type]
-          o[real] = type.fromDb(row[field.key])
-        o.id = o[@pk]
-        o.sortIndex = sortIndex
-        sortIndex += 1
-        returnObject[o.id] = o
-
-      callback(null, returnObject)
-
-  findOne: (conditions, callback)=>
-    @find conditions, (err, rows)->
+  findOne: (context, conditions, callback)=>
+    conditions.limit = 1
+    @find context, conditions, (err, rows)->
       return callback(err) if err
       for id, row of rows
         return callback(null, row)
       return callback(null, null)
 
-  findOneById: (id, fieldset, callback)=>
-    @findOne {pk: id, fieldset: fieldset}, callback
+  findOneById: (context, id, fieldset, callback)=>
+    @findOne context, {pk: id, fieldset: fieldset}, callback
 
-  getChoicesFor: (id, fieldName, search, callback)=>
+  getChoicesFor: (context, id, fieldName, search, callback)=>
     if not @tableDef.fields.hasOwnProperty(fieldName)
       process.nextTick ()->
         callback("Field #{fieldName} doesn't exist in #{@tableName}")
@@ -336,7 +148,7 @@ class Collection
         fieldset = 'table'
       else
         fieldset = 'default'
-      collection.find({fieldset: fieldset, search: {"*": search}}, callback)
+      collection.find(context, {fieldset: fieldset, search: {"*": search}}, callback)
 
 
 module.exports = Collection

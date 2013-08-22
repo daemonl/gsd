@@ -73,7 +73,7 @@ getDefForField = (field)->
     }
     opt = optionsWithDefaults def, field
     nullPart = if opt.nullable then "NULL" else "NOT NULL"
-    return "DATETIME #{nullPart}"
+    return "INT(32) UNSIGNED #{nullPart}"
 
   if field.type is 'int'
     return "INT(11) UNSIGNED"
