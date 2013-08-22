@@ -5,13 +5,11 @@ Configuration based socket.io database server
 ---------
 
 Server Config:
-
-    config = ...; // see the example in tests/runners/test_config.coffee
+```javascript
+    config = {}; // see the example in tests/runners/test_config.coffee for all options
     
     config.model = [
       "person": {
-        "table": "person",
-        "pk": "id",
         "fields": {
           "id": {"type": "id"},
           "name_given": {"type": "string", "important": true},
@@ -20,7 +18,7 @@ Server Config:
           "phones": {"type": "array", "fields": {"type": {"type": "string"}, "number": {"type": "string"}}},
           "company": {"type": "ref", "collection": "company"}
         },
-        "fieldsets":{
+        "fieldsets": {
           "table": ["name_given", "name_family", "company.name"],
           "form": ["name_given", "name_given_other", "name_family", "company.id", "company.name", "phones"]
         },
@@ -31,9 +29,10 @@ Server Config:
     
     gsd = require("gsd");
     gsd(config);
-    
+```    
     
 Client Side:
+```coffeescript
     # Retreive one object
     socket.emit "get", "person", 1, "form", (err, person)->
       console.log person
@@ -50,7 +49,7 @@ Client Side:
         
     # Bind to any model change: (Flags the change, doesn't give the new derails)
     socket.on "update" (collection, id)->
-      // If I care:
+      # If something cares:
       socket.emit "get", collection, id, (err, obj)->
         console.log "UPDATE", collection, id, obj
         
@@ -61,9 +60,8 @@ Client Side:
     # Create a new object (null ID)
     socket.emit "set", "person", null, {name_given: "bob", name_family: "smith"}, (err, data)->
       console.log(data.id)
+```  
   
-  
-
 3rd party components:
 - connect for http
 - socket.io for data sync
@@ -90,17 +88,11 @@ A test suite for testing the app from a fake client.
 MySQL Database creation (Almost sync) for a few data types (The framework is in place)
 
 
+
 Under Construction:
 ---------
 Multi Tennancy / Access Masks
 
 Allow extension with templates, views, and other actions on top of the Connect middleware pattern.
 
-Backbone extended models to handle socket.io sync and the data model.
-
 Configuration default, and parser/checker - it's a complicated structure
-
-
-Ideas:
---------
-Other databases, SQL or otherwise.
