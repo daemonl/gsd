@@ -1,17 +1,75 @@
-gsd (Get Stuff Done)
+Get Stuff Done
 =========
 
-MySQL Abstraction in node.js
+Configuration based socket.io database server
 ---------
 
+Server Config:
+
+    config = ...; // see the example in tests/runners/test_config.coffee
+    
+    config.model = [
+      "person": {
+        "table": "person",
+        "pk": "id",
+        "fields": {
+          "id": {"type": "id"},
+          "name_given": {"type": "string", "important": true},
+          "name_given_other": {"type": "string"},
+          "name_family": {"type": "string", "important": true},
+          "phones": {"type": "array", "fields": {"type": {"type": "string"}, "number": {"type": "string"}}},
+          "company": {"type": "ref", "collection": "company"}
+        },
+        "fieldsets":{
+          "table": ["name_given", "name_family", "company.name"],
+          "form": ["name_given", "name_given_other", "name_family", "company.id", "company.name", "phones"]
+        },
+        "identityFields": ["name_given", "name_family"]
+      }
+      // ... etc
+    ]
+    
+    gsd = require("gsd");
+    gsd(config);
+    
+    
+Client Side:
+    # Retreive one object
+    socket.emit "get", "person", 1, "form", (err, person)->
+      console.log person
+      
+    # Search all textish fields in the fieldset:
+    socket.emit "list", "person", {fieldset: "list", search: "bob"}, (err, people)->
+      for person in people
+        console.log(person)
+    
+    # Show all people
+    socket.emit "list", "person", {fieldset: "list"}, (err, people)->
+      for person in people
+        console.log(person) 
+        
+    # Bind to any model change: (Flags the change, doesn't give the new derails)
+    socket.on "update" (collection, id)->
+      // If I care:
+      socket.emit "get", collection, id, (err, obj)->
+        console.log "UPDATE", collection, id, obj
+        
+    # Change an object:
+    socket.emit "set", "person", "1", {name_family: "smith"}, (err, data)->
+      console.log(err) if err
+    
+    # Create a new object (null ID)
+    socket.emit "set", "person", null, {name_given: "bob", name_family: "smith"}, (err, data)->
+      console.log(data.id)
+  
+  
+
+3rd party components:
 - connect for http
 - socket.io for data sync
 - nunjucks for template rendering
 - scrypt for password hashing
-
-An opinionated data access framework (/server).
-
-Very early development, it doesn't actually work yet.
+- MySQL for... database stuff
 
 This is *not built with massive scalability* in mind: It is for enterprise applications, or apps with a (relatively)
 small number of users, each with heavy use of the system.
@@ -34,7 +92,7 @@ MySQL Database creation (Almost sync) for a few data types (The framework is in 
 
 Under Construction:
 ---------
-Data access model (which is kind of the whole point)
+Multi Tennancy / Access Masks
 
 Allow extension with templates, views, and other actions on top of the Connect middleware pattern.
 
