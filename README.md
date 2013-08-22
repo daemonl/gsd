@@ -1,8 +1,10 @@
 Get Stuff Done
 =========
 
-Configuration based socket.io database server
----------
+Goal: Create a configuration based socket.io relational database server. 
+Next time I am making a web app, I can write a config file, sync it to a database, then start writing client side javascript.
+
+Contribut(ions/ers) more than welcome!
 
 Server Config:
 ```javascript
