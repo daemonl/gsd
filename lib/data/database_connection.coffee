@@ -44,11 +44,12 @@ class DatabaseConnection
     @onDb (db)=>
       callback(null, new Collection(@, @config, db, collectionName, @log))
 
-  query: (query, callback)=>
-    console.log("QUERY: '#{query}'")
+  query: (query, params, callback)=>
+    if typeof params is "function"
+      callback = params
+      params = {}
     @onDb (db)=>
-
-      db.query query, {}, (err, res)->
+      db.query query, params, (err, res)->
         callback(err, res)
 
   update: (collectionName, conditions, entitySerialized, callback)=>
@@ -61,7 +62,7 @@ class DatabaseConnection
   updateOne: (collectionName, pk, entitySerialized, callback)=>
     @getCollection collectionName, (err, collection)=>
       return callback(err) if err
-      collection.updateOne {}, pk, entitySerialized, (err, result)->
+      collection.updateOne {applitaction: true}, pk, entitySerialized, (err, result)->
         return callback(err) if err
         callback(null, result)
 

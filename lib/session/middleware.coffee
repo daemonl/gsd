@@ -10,34 +10,35 @@ class SessionMiddleware
     @config.security.publicUrls.push(@config.security.paths.login)
     @config.security.publicUrls.push(@config.security.paths.signup)
 
+    @loginPaths = [
+      {path: @config.security.paths.login,  methods: ['POST'], handler: @handlePostLogin}
+      {path: @config.security.paths.signup, methods: ['POST'], handler: @handlePostSignup}
+      {path: @config.security.paths.logout, methods: ['GET', 'POST'], handler: @handleLogout}
+    ]
 
   sendError: (req, res, err)=>
     console.log("SECURITY ERROR:", err)
     res.send(500, @config.security.messages.unknownError)
 
   middleware: (req, res, next)=>
+    middleware = @
 
-    loginPaths = [
-      {path: @config.security.paths.login,  methods: ['POST'], handler: @handlePostLogin}
-      {path: @config.security.paths.signup, methods: ['POST'], handler: @handlePostSignup}
-      {path: @config.security.paths.logout, methods: ['GET', 'POST'], handler: @handleLogout}
-    ]
 
     #Make sure req.session is a valid session
-    @ensureSession req, res, (err)=>
-      return @sendError(req, res, err) if err
+    @ensureSession req, res, (err)->
+      return middleware.sendError(req, res, err) if err
 
       # add a req.session object from the valid session
-      @hidrateSession req, res, (err)=>
-        return @sendError(req, res, err) if err
+      middleware.hidrateSession req, res, (err)->
+        return middleware.sendError(req, res, err) if err
 
         # If the path/method should change / check the session:
-        for path in loginPaths
+        for path in middleware.loginPaths
           if req._parsedUrl.path is path.path and req.method in path.methods
             return path.handler(req, res)
 
         # If it is a public URL (After the first one, because LOGIN is public
-        if req._parsedUrl.path in @config.security.publicUrls and req.method is "GET"
+        if req._parsedUrl.path in middleware.config.security.publicUrls and req.method is "GET"
           return next()
 
         # If the user is logged in:
@@ -45,8 +46,8 @@ class SessionMiddleware
           next()
         else
           # No user, and the URL is not public.
-          req.addFlash "error", @config.security.messages.notLoggedIn, ()=>
-            return res.redirect @config.security.paths.login
+          req.addFlash "danger", middleware.config.security.messages.notLoggedIn, ()->
+            return res.redirect middleware.config.security.paths.login
 
   #Make sure req.session is a valid session, creating a new one if not.
   ensureSession: (req, res, callback)=>
@@ -61,7 +62,7 @@ class SessionMiddleware
 
 
     # Check the database for a valid session
-    @db.getEntity @config.security.sessionTable, {id: (req.sessionCookie)}, (err, session)=>
+    @db.getEntity @config.security.sessionTable, {id: (req.sessionCookie), fieldset: "application"}, (err, session)=>
       return @sendError(req, res, err) if err
 
       # If the session matched
@@ -75,6 +76,7 @@ class SessionMiddleware
           req.session = {}
           req.session.id = session.id
           req.session.user = session.user
+          req.session.flash = session.flash
           if @config.security.groupTable isnt null
             req.session.group = session.group
           else
@@ -92,25 +94,27 @@ class SessionMiddleware
 
   handlePostLogin: (req, res)=>
     if not(req.body and req.body.hasOwnProperty('username') and req.body.hasOwnProperty('password') and req.body.username)
-      req.addFlash "error", @config.security.messages.incompleteLogin, ()=>
+      req.addFlash "danger", @config.security.messages.incompleteLogin, ()=>
         return res.redirect(@config.security.paths.login)
       return
 
     username = req.body.username
     password = req.body.password
 
-    searchParams = {}
-    searchParams[@config.security.user.username] = username
+    esc_username = username.replace(/[^a-zA-Z0-9_@\-]/g, "_")
 
-    @db.getEntity @config.security.userTable, {filter: searchParams, fieldset: 'login'}, (err, user)=>
+
+    @db.query "SELECT * FROM #{@config.security.userTable} WHERE #{@config.security.user.username} = '#{esc_username}' LIMIT 1", (err, users)=>
       return @sendError(req, res, err) if err
-      if not user
-        req.addFlash "error", @config.security.messages.invalidLogin, ()=>
+
+      if users.length < 1
+        req.addFlash "danger", @config.security.messages.invalidLogin, ()=>
         return res.redirect(@config.security.paths.login)
+      user = users[0]
 
       scrypt.verifyHash user[@config.security.user.password], password, (err, result)=>
         if err or result is false
-          req.addFlash "error", @config.security.messages.invalidLogin, ()=>
+          req.addFlash "danger", @config.security.messages.invalidLogin, ()=>
           return res.redirect(@config.security.paths.login)
 
         console.log("USER VERIFIED")
@@ -138,7 +142,7 @@ class SessionMiddleware
   handlePostSignup: (req, res)=>
     rejectSignup = (message)=>
       console.log("Signup Error", message)
-      req.addFlash "error", message, ()=>
+      req.addFlash "danger", message, ()=>
         res.redirect(@config.security.paths.signup)
 
     username = req.body.username
@@ -193,8 +197,7 @@ class SessionMiddleware
             user: req.session.user
             flash: req.session.flash
             last: req.session.last
-
-          @db.updateOne @config.security.sessionTable, req.session.id, changeset, (err, res)=>
+          @db.update @config.security.sessionTable, {"pk": req.session.id, fieldset: "application"}, changeset, (err, res)=>
             console.log(err) if err
             console.log("Saved Session")
             callback()
@@ -221,7 +224,11 @@ class SessionMiddleware
         if err
           console.log(err)
           origEnd()
-        sessionCollection.updateOne {}, req.session.id, req.session, (err)=>
+        changeset =
+          user: req.session.user
+          flash: req.session.flash
+          last: req.session.last
+        sessionCollection.update {}, {"pk": req.session.id, fieldset: "application"}, changeset, (err)=>
           if err
             console.log(err)
           return origEnd.call(res, content)

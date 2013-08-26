@@ -28,7 +28,7 @@ class UserSession
       @session.last = new Moment().format("YYYY-MM-DDTHH:mm:ss")
       changeset =
         last: @session.last
-      @group.db.update @config.security.sessionTable, {id: @session.id}, changeset, (err, res)=>
+      @group.db.update @config.security.sessionTable, {fieldset: 'application', id: @session.id}, changeset, (err, res)=>
         console.log(err) if err
         console.log("Saved Session")
 

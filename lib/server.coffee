@@ -62,7 +62,7 @@ class Server
     return (req, res, next)->
       for p in directRenderPaths
         if req.method in p.methods and req._parsedUrl.path is p.path
-          res.render(p.template, {})
+          res.render(p.template, {flash: req.session.flash})
           return
       next()
 

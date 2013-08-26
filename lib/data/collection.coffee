@@ -1,5 +1,6 @@
 dataTypes = require('./types')
 Query = require('./query_builder')
+dfd = require("node-promise")
 class Collection
   constructor: (@databaseConnection, @config, @mysql, @collectionName, @log)->
     if not @config.model.hasOwnProperty(@collectionName)
@@ -31,10 +32,15 @@ class Collection
 
   update: (context, conditions, fieldsToUpdate, callback)=>
 
+    fieldset = "form"
+    if conditions.hasOwnProperty('fieldset')
+      fieldset = conditions.fieldset
     try
-      query = @getQuery(context, @getFieldList("default"))
+
+      query = @getQuery(context, @getFieldList(fieldset))
     catch e
       return callback(e)
+
     query.buildUpdate conditions, fieldsToUpdate, (err, sql)=>
       if err
         console.log(err)
@@ -72,15 +78,23 @@ class Collection
       return @mysql.query "INSERT INTO #{@tableName} VALUES ()", null, postInsert
 
     setFields = {}
+    promises = []
+
     for k,v of fields
       if @tableDef.fields.hasOwnProperty(k)
+        promise = new dfd.Promise()
+        promises.push(promise)
         def = @tableDef.fields[k]
         type = dataTypes[def.type]
-        setFields[k] = type.toDb(v)
+        do (setFields, k, v, promise)->
+          type.toDb v, (err, val)->
+            setFields[k] = val
+            promise.resolve()
 
-    query = "INSERT INTO #{@tableName} SET ?"
-    @log(query)
-    @mysql.query query, setFields, postInsert
+    dfd.allOrNone(promises).then ()=>
+      query = "INSERT INTO #{@tableName} SET ?"
+      @log(query)
+      @mysql.query query, setFields, postInsert
 
   delete: (context, id, callback)=>
     sql = "DELETE FROM #{@tableName} WHERE #{@pk} = #{id};"
@@ -109,13 +123,22 @@ class Collection
           return callback(err)
         ret = {}
         sortIndex = 0
-        for row in result
-          obj = query.unPack(row)
-          obj.sortIndex = sortIndex
-          sortIndex += 1
-          ret[obj.id] = obj
 
-        callback(null, ret)
+        doNext = ()->
+
+          if result.length < 1
+            callback(null, ret)
+          else
+            row = result.shift()
+            query.unPack row, (err, obj)->
+              callback(err) if err
+              obj.sortIndex = sortIndex
+              sortIndex += 1
+              ret[obj.id] = obj
+              doNext()
+        doNext()
+
+
 
   findOne: (context, conditions, callback)=>
     conditions.limit = 1

@@ -1,42 +1,77 @@
 moment = require('moment')
+scrypt = require("scrypt")
 baseTypes = {}
 
-baseTypes.base = {
-  toDb: (val)->
-    return val
-  fromDb: (val)->
-    return val
-}
+baseTypes.base =
+  toDb: (val, callback)->
+    process.nextTick ()->
+      callback(null, val)
+
+  fromDb: (val, callback)->
+    process.nextTick ()->
+      callback(null, val)
 
 baseTypes.int =
-  toDb: (val)->
-    return null if val is null or val is undefined or val.length < 1
-    return val/1
-  fromDb: (val)->
-    return null if val is null or val is undefined or val.length < 1
-    return val
-
+  toDb: (val, callback)->
+    process.nextTick ()->
+      if val is null or val is undefined or val.length < 1
+        return callback(null, null)
+      return callback(null, val/1)
+    
+  fromDb: (val, callback)->
+    process.nextTick ()->
+      return callback(null, null) if val is null or val is undefined or val.length < 1
+      return callback(null, val/1)
 
 baseTypes.datetime =
-  toDb: (val)->
-    if ""+val/1 is ""+val
-      return moment(val*1000).format("X")/1
-    return moment(val).format("X")/1
+  toDb: (val, callback)->
+    process.nextTick ()->
+      if ""+val/1 is ""+val
+        return callback(null, moment(val*1000).format("X")/1)
+      return callback(null, moment(val).format("X")/1)
 
-  fromDb: (val)->
-    if ""+val/1 is ""+val
-      return moment(val*1000).format("X")
-    return val
+  fromDb: (val, callback)->
+    process.nextTick ()->
+      if ""+val/1 is ""+val
+        return callback(null, moment(val*1000).format("X"))
+      return callback(null, val)
+
 baseTypes.date =
-  toDb: (val)->
-    if ""+val.length < 1
-      return null
-    return moment(val).format("YYYY-MM-DD")
+  toDb: (val, callback)->
+    process.nextTick ()->
+      return callback(null, null) if (""+val).length < 1
+      return callback(null, moment(val).format("YYYY-MM-DD"))
 
-  fromDb: (val)->
-    if ""+val.length < 1
-      return null
-    return moment(val).format("YYYY-MM-DD")
+  fromDb: (val, callback)->
+    process.nextTick ()->
+      return callback(null, null) if (""+val).length < 1
+      m = moment(val)
+      return callback(null, null) if m is null
+      return callback(null, m.format("YYYY-MM-DD"))
+  
+baseTypes.password =
+  toDb: (val, callback)->
+    scrypt.passwordHash val, 0.1, (err, pwdhash)->
+      callback(err, pwdhash)
+   
+  fromDb: (val, callback)->
+    process.nextTick ()->
+      return callback(null, "----")
+
+baseTypes.array =
+  toDb: (val, callback)->
+    process.nextTick ()->
+      callback(null, JSON.stringify(val))
+
+  fromDb: (val, callback)->
+    process.nextTick ()->
+      try
+        obj = JSON.parse(val)
+        if obj is null
+          return callback(null, [])
+        return callback(null, obj)
+      catch e
+        callback(e)
 
 dataTypes = {
   gid: baseTypes.base
@@ -46,18 +81,11 @@ dataTypes = {
   date: baseTypes.date
   string: baseTypes.base
   text: baseTypes.base
+  password: baseTypes.password
   address: baseTypes.base
   enum: baseTypes.base
   auto_timestamp: baseTypes.base
-  array: {
-    toDb: (val)->
-      return JSON.stringify(val)
-    fromDb: (val)->
-      v =  JSON.parse(val)
-      if v is null
-        return []
-      return v
-  }
+  array: baseTypes.array
 }
 
 module.exports = dataTypes
