@@ -76,6 +76,7 @@ baseTypes.array =
 dataTypes = {
   gid: baseTypes.base
   id: baseTypes.int
+  int: baseTypes.int
   ref: baseTypes.int
   datetime: baseTypes.datetime
   date: baseTypes.date

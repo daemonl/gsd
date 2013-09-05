@@ -36,6 +36,7 @@ class GroupSession
       collection.find context, conditions, callback
 
   set: (user, entity, id, changeset, callback)=>
+    isCreate = if id is null or id is 'null' or not id then true else false
     context = @getContext(user)
     @db.getCollection entity, (err, collection)=>
       return callback(err) if err
@@ -43,8 +44,10 @@ class GroupSession
         return callback(err) if err
         id = savedEntity[collection.pk]
         callback(null, savedEntity)
+        action = if isCreate then "create" else "edit"
+        @addHistory(user, action, collection.collectionName,  id, changeset)
         @emitChange(entity, id)
-        
+
 
   delete: (user, entity, id, callback)=>
     console.log("DEL", entity, id)
@@ -54,10 +57,34 @@ class GroupSession
       console.log("DELETE ", entity, id)
       @db.delete entity, id, (err)=>
         return callback(err) if err
+        @addHistory(user, "delete", collection.collectionName,  id, {})
         @emitDelete(entity, id)
         callback(null)
 
+
+  addHistory: (user, action, collectionName, entity_id, changeset)=>
+    console.log "ADDED HISTORY"    
+    @db.getCollection "history", (err, collection)=>
+      if err
+        console.log(err)
+        return
+      context = {}
+      fields = 
+        user: user.serialized.id
+        timestamp: new Date()
+        action: action
+        entity_id: entity_id
+        entity: collectionName
+        changeset: JSON.stringify(changeset)
+
+      collection.insert context, fields, (err)=>
+        if err 
+          console.log(err)
+        console.log "ADDED HISTORY"
+        null
+
   emitChange: (collection, pk)=>
+    console.log("CHANGE")
     for id,user of @activeUsers
       for socket in user.sockets
         socket.emit('update', collection, pk)
