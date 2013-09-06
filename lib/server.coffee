@@ -80,11 +80,18 @@ class Server
 
       return res.send(404, "Not Found") if not req.files.attachment
       console.log("FILES: ", req.files)
+      newName = "files/" + new Date().getTime()
 
       attachment = req.files.attachment
+      fs.rename attachment.path, newName, (err)->
+        if err
+          console.log(err)
+        null
+
+     
       changeset = {}
       changeset[collectionRef] = collectionId
-      changeset.file = attachment.path
+      changeset.file = newName
       changeset.filename = attachment.name
       changeset.mime = attachment.type
 
@@ -94,11 +101,14 @@ class Server
         response = "<!DOCTYPE html><html><head><script type='text/javascript'>#{script}</script></head><body></body></html>"
         res.send(response)
       return
+
+
     if req.method is "GET" and req._parsedUrl.path.substr(0, 9) is "/download"
       console.log("DOWNLOAD")
       parts = req._parsedUrl.path.split("/")
-      if parts.length > 3 #Allow extras at the end for friendly filenames. The filename has no actual effect.
-        res.send(404, "Not Found")
+      if parts.length < 4 #Allow extras at the end for friendly filenames. The filename has no actual effect.
+        res.send(404, "Not Found (Parts Length = #{parts.length})")
+        return
       fileCollection = parts[2]
       fileId = parts[3]
 
@@ -114,6 +124,7 @@ class Server
         fs.exists f.file, (exists)->
           if not exists
             res.send(404, "Not Found") 
+            return
 
           try
             filestream = fs.createReadStream(f.file)
