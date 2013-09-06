@@ -419,6 +419,7 @@ class Query
           direction = "ASC"
 
         if not @map_field.hasOwnProperty(sort.fieldName)
+          console.log("Sort references non mapped field #{sort.fieldName}")
           process.nextTick ()->
              callback("Sort references non mapped field #{sort.fieldName}")
           return
@@ -427,7 +428,8 @@ class Query
         col = map.alias
 
         sorts.push("#{col} #{direction}")
-      str += "ORDER BY #{sorts.join(", ")}"
+      if sorts.length
+        str += "ORDER BY #{sorts.join(", ")}"
 
     if conditions.hasOwnProperty("limit")
       limit = parseInt(conditions.limit)

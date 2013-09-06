@@ -73,6 +73,15 @@ baseTypes.array =
       catch e
         callback(e)
 
+baseTypes.file =
+  toDb: (val, callback)->
+    process.nextTick ()->
+      callback(null, val)
+
+  fromDb: (val, callback)->
+    process.nextTick ()->
+      callback(null, val)
+
 dataTypes = {
   gid: baseTypes.base
   id: baseTypes.int
@@ -87,6 +96,7 @@ dataTypes = {
   enum: baseTypes.base
   auto_timestamp: baseTypes.base
   array: baseTypes.array
+  file: baseTypes.file
 }
 
 module.exports = dataTypes

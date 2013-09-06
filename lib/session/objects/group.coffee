@@ -45,25 +45,30 @@ class GroupSession
         id = savedEntity[collection.pk]
         callback(null, savedEntity)
         action = if isCreate then "create" else "edit"
-        @addHistory(user, action, collection.collectionName,  id, changeset)
+        collection.getIdentityString id, (err, identity)=>
+          if err
+            console.log(err)
+          return
+          @addHistory(user, action, collection.collectionName, id, changeset, identity)
         @emitChange(entity, id)
 
 
   delete: (user, entity, id, callback)=>
     console.log("DEL", entity, id)
-    @get user, entity, id, (err, response, parsed)=>
-      if response.length < 1
-        return callback("Data object doesn't exist.")
-      console.log("DELETE ", entity, id)
-      @db.delete entity, id, (err)=>
-        return callback(err) if err
-        @addHistory(user, "delete", collection.collectionName,  id, {})
-        @emitDelete(entity, id)
-        callback(null)
+    @db.getCollection entity, (err, collection)=>
+      collection.getIdentityString id, (err, identity)=>
+        if err
+           return callback("Data object doesn't exist.")
+        @db.delete entity, id, (err)=>
+          return callback(err) if err
+          @addHistory(user, "delete", collection.collectionName,  id, {}, identity)
+          @emitDelete(entity, id)
+          callback(null)
 
 
-  addHistory: (user, action, collectionName, entity_id, changeset)=>
-    console.log "ADDED HISTORY"    
+  addHistory: (user, action, collectionName, entity_id, changeset, identity)=>
+    console.log "ADDED HISTORY"
+
     @db.getCollection "history", (err, collection)=>
       if err
         console.log(err)
@@ -71,15 +76,32 @@ class GroupSession
       context = {}
       fields = 
         user: user.serialized.id
+        identity: identity
         timestamp: new Date()
         action: action
         entity_id: entity_id
         entity: collectionName
         changeset: JSON.stringify(changeset)
 
-      collection.insert context, fields, (err)=>
+
+
+      collection.insert context, fields, (err, escapedFields, returnedFields)=>
         if err 
           console.log(err)
+          return
+        for id,user of @activeUsers
+          for socket in user.sockets
+            emitFields =
+              user:
+                username: user.serialized.username
+              identity: fields.identity
+              timestamp: fields.timestamp.getTime()
+              action: fields.action
+              entity: fields.entity
+              entity_id: fields.entity_id
+
+            socket.emit('history', emitFields)
+
         console.log "ADDED HISTORY"
         null
 

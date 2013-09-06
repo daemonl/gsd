@@ -1,6 +1,7 @@
 dataTypes = require('./types')
 Query = require('./query_builder')
 dfd = require("node-promise")
+
 class Collection
   constructor: (@databaseConnection, @config, @mysql, @collectionName, @log)->
     if not @config.model.hasOwnProperty(@collectionName)
@@ -20,6 +21,11 @@ class Collection
       fieldList = []
       for k,v of @tableDef.fields
         fieldList.push(k)
+    else if fieldset is "identity"
+      if @tableDef.hasOwnProperty("identityFields")
+        fieldList = @tableDef.identityFields
+      else
+        fieldList = ["name"]
     else
       throw "Fieldset #{fieldset} doesn't exist for #{@tableName}"
 
@@ -139,6 +145,20 @@ class Collection
         doNext()
 
 
+  getIdentityString: (id, callback)=>
+    conditions =
+      limit: 1
+      fieldset: "identity"
+      pk: id
+    @find {}, conditions, (err, rows)->
+      return callback(err) if err
+      for id, row of rows
+        fields = []
+        for k,v of row
+          if k and k != "id" and k != "sortIndex" and k.length > 0 and (""+k).indexOf(".id") is -1
+            fields.push(v)
+        return callback(null, fields.join(", "))
+      return callback(null, "?")
 
   findOne: (context, conditions, callback)=>
     conditions.limit = 1
