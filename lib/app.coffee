@@ -17,7 +17,7 @@ start = (config)->
 
   server.start()
 
-  io = socketIo.listen(server.server)
+  io = socketIo.listen(server.server, {log: false})
   socketSession.bindSocket(io)
 
 start.sync = require("./data/syncdb")

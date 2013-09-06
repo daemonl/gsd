@@ -14,7 +14,6 @@ class UserSession
 
   addSocket: (socket)=>
     @sockets.push(socket)
-    console.log("New Socket for User")
     socket.on 'get', @get
     socket.on 'getChoicesFor', @getChoicesFor
     socket.on 'list', @list
@@ -30,23 +29,27 @@ class UserSession
         last: @session.last
       @group.db.update @config.security.sessionTable, {fieldset: 'application', id: @session.id}, changeset, (err, res)=>
         console.log(err) if err
-        console.log("Saved Session")
+        console.log("Saved Session #{@serialized.username}")
 
 
 
   get: (collection, id, fieldset, callback)=>
-    console.log("GET", collection, fieldset, id)
+    console.log("#{@serialized.username} get", collection, fieldset, id)
     try
       @group.get @, collection, id, fieldset, (err, entity)->
         callback(err, entity)
+
         throw err if err
     catch e
       console.error(e)
       callback("An unknown error occurred")
 
   getChoicesFor: (collection, id, field, search, callback)=>
+    console.log("#{@serialized.username} - getChoicesFor",  collection, id, field, search)
     try
-      @group.getChoicesFor @, collection, id, field, search, callback
+      @group.getChoicesFor @, collection, id, field, search, (err, list)->
+        #console.log(list)
+        callback(err, list)
     catch e
       console.error(e)
       callback("An unknown error occurred")
@@ -55,7 +58,7 @@ class UserSession
 
 
   list: (collection, query, callback)=>
-    console.log("LIST", collection, query)
+    console.log("#{@serialized.username} list", collection, query)
     try
       return @group.list(@, collection, query, callback)
     catch e

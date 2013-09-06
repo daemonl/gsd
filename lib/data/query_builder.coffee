@@ -61,7 +61,7 @@ class Query
 
 
   walkFieldAggregate: (baseTable, prefixPath, fieldDef)=>
-    console.log "WALK AGG"
+  
     
     path = fieldDef.path.split(".")
 
@@ -70,9 +70,6 @@ class Query
       # This isn't the backref
       
       linkBaseTable = @walkFieldUtil_IncTable(baseTable, prefixPath, path)
-
-    console.log "WALK AGG: Got to Non Linked: ", prefixPath, path
-
     
     collectionName = path[0]
     collectionDef = @getCollectionDef(collectionName)
@@ -346,6 +343,8 @@ class Query
 
     if conditions.hasOwnProperty("search")
       for field, term of conditions.search
+        console.log(field, term)
+
         do (field, term)->
           wherePromise = new dfd.Promise()
           wherePromises.push(wherePromise)
@@ -359,7 +358,7 @@ class Query
 
             if /^[0-9]*$/.test(term)
               id = +term
-              whereConditions.push({field: @pk, cmp: "=", val: id})
+              whereConditions.push({field: builder.pk, cmp: "=", val: id})
             else
 
               searchGroupPromises = []
@@ -369,7 +368,7 @@ class Query
                   tpPromise = new dfd.Promise()
                   searchGroupPromises.push(tpPromise)
                   partGroup = []
-                  for fieldName, field of @map_field
+                  for fieldName, field of builder.map_field
                     if field.def.type in ['string', 'text']
                       partGroup.push({field: fieldName, cmp: "LIKE", val: "'%#{termPart}%'"})
 

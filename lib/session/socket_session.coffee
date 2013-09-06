@@ -18,7 +18,6 @@ class SocketSession
     else if data.headers.cookietest
       headerCookie = data.headers.cookietest
     else
-      console.log(data.headers)
       return accept('Session cookie required for authentication', false)
 
     data.signedCookies = connect.utils.parseSignedCookies(cookie.parse(decodeURIComponent(headerCookie)), @config.security.siteSecret)
@@ -32,8 +31,7 @@ class SocketSession
       if @config.security.groupTable is null
         session.group = 1
 
-
-      console.log("Session Found:", {id: data.sessionCookie}, session)
+      
 
       if (session and session.user and session.group)
         data.session = session
@@ -45,9 +43,10 @@ class SocketSession
             data.sessionUser = userSession
             userSession.setGroup(groupSession)
             data.sessionGroup = groupSession
-            console.log("Accept socket session with user and group")
+            console.log("Socked Handshake Accepted. Session #{data.sessionCookie}, User '#{userSession.serialized.username}'")
             accept(null, true)
       else
+        console.log("Socked Handshake Rejected. Session id #{data.sessionCookie}")
         console.log(session)
         accept(null, false)
 

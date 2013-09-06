@@ -54,7 +54,6 @@ class SessionRepository
     if not @config.security.groupTable
       groupSession = new GroupSession(@config, {id: 1}, @db)
       @groupSessions[1] = groupSession
-      console.log("Created null group session - config.security.groupTable was null")
       callback(null, groupSession)
     else
       @db.getEntity @config.security.groupTable, groupId, (err, serialized)=>

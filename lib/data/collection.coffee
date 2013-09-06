@@ -2,6 +2,8 @@ dataTypes = require('./types')
 Query = require('./query_builder')
 dfd = require("node-promise")
 
+debug = true
+
 class Collection
   constructor: (@databaseConnection, @config, @mysql, @collectionName, @log)->
     if not @config.model.hasOwnProperty(@collectionName)
@@ -32,7 +34,6 @@ class Collection
     if @pk not in fieldList
       fieldList.push(@pk)
 
-    console.log(fieldList)
     return fieldList
 
 
@@ -53,7 +54,7 @@ class Collection
         callback(err)
         return
 
-      console.log(sql)
+      if debug then console.log("=========\n", sql.replace("\n\n", "\n"), "\n=========")
       @mysql.query sql, (err, res)->
         return callback(err) if err
         callback(null, fieldsToUpdate)
@@ -110,7 +111,6 @@ class Collection
 
     
   find: (context, conditions, callback)->
-
     try
       fieldList = @getFieldList(conditions.fieldset or "default")
       query = @getQuery(context, fieldList)
@@ -122,7 +122,7 @@ class Collection
         console.log(err)
         callback(err)
         return
-      console.log(sql)
+      if debug then console.log("=========\n", sql, "\n=========")
 
       @mysql.query sql, (err, result)=>
         if err
@@ -186,11 +186,11 @@ class Collection
     collection = @databaseConnection.getCollection field.collection, (err, collection)->
       return callback(err) if err
       if collection.tableDef.fieldsets.hasOwnProperty('search')
-        fieldset = 'quicklist'
+        fieldset = 'search'
       else if collection.tableDef.fieldsets.hasOwnProperty('table')
         fieldset = 'table'
       else
-        fieldset = 'default'
+        fieldset = 'identity'
       collection.find(context, {fieldset: fieldset, search: {"*": search}}, callback)
 
 

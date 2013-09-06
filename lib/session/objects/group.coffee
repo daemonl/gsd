@@ -48,7 +48,7 @@ class GroupSession
         collection.getIdentityString id, (err, identity)=>
           if err
             console.log(err)
-          return
+            return
           @addHistory(user, action, collection.collectionName, id, changeset, identity)
         @emitChange(entity, id)
 
@@ -95,7 +95,7 @@ class GroupSession
               user:
                 username: user.serialized.username
               identity: fields.identity
-              timestamp: fields.timestamp.getTime()
+              timestamp: fields.timestamp.getTime()/1000
               action: fields.action
               entity: fields.entity
               entity_id: fields.entity_id
