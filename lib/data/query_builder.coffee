@@ -358,7 +358,8 @@ class Query
 
             if /^[0-9]*$/.test(term)
               id = +term
-              whereConditions.push({field: builder.pk, cmp: "=", val: id})
+              wherePromise.resolve({field: builder.pk, cmp: "=", val: id})
+
             else
 
               searchGroupPromises = []

@@ -97,6 +97,7 @@ dataTypes = {
   auto_timestamp: baseTypes.base
   array: baseTypes.array
   file: baseTypes.file
+  markdown: baseTypes.base
 }
 
 module.exports = dataTypes

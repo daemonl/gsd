@@ -37,7 +37,7 @@ getDefForField = (field)->
     nullPart = if opt.nullable then "NULL" else "NOT NULL"
     return "VARCHAR(#{opt.length}) #{nullPart}"
 
-  if field.type in ['text']
+  if field.type in ['text', 'markdown']
     return "TEXT NULL"
 
 
