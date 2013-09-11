@@ -7,6 +7,7 @@ SocketSession = require("./session/socket_session")
 connect = require("connect")
 socketIo = require('socket.io')
 
+
 start = (config)->
   databaseConnection = new DatabaseConnection(config)
   sessionRepository = new SessionRepository(config, databaseConnection)

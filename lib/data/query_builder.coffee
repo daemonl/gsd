@@ -433,7 +433,8 @@ class Query
 
     if conditions.hasOwnProperty("limit")
       limit = parseInt(conditions.limit)
-      str += " LIMIT #{limit}"
+      if limit > 0
+        str += " LIMIT #{limit}"
     if conditions.hasOwnProperty("offset")
       str += " OFFSET #{parseInt(conditions.offset)}"
     else if conditions.hasOwnProperty("page") and limit
