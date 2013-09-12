@@ -8,6 +8,7 @@ class Query
     # the uids for fields and tables t0, f0 etc
     @i_table = 0
     @i_field = 0
+    @pk = @tableDef.pk or "id"
 
     @map_table = {}
     @map_field = {}
