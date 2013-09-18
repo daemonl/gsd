@@ -1,4 +1,4 @@
-
+fs = require('fs')
 files = (req, res, next)->
 
   if req.method is "POST" and req._parsedUrl.path.substr(0,7) is "/upload"
