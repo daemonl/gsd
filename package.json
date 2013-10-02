@@ -6,10 +6,10 @@
     "start": "coffee app.coffee",
     "test": "coffee tests/test_spec.coffee"
   },
-  "main": "./lib/app.coffee",
+  "main": "./lib/app.js",
   "dependencies": {
     "connect": "*",
-
+    "nodemailer": "*",
     "less-middleware": "*",
     "swig": "0.13.2",
     "consolidate": "*",
