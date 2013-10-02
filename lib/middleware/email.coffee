@@ -48,7 +48,7 @@ getEmailString = (user, settings, id, callback)->
 		tpl = nenv.getTemplate(settings.templateFile + ".swig.html")
 		callback(tpl.render(parameters), parameters)
 		
-
+#sendEmail
 module.exports = (config)->
 	if not config.hasOwnProperty('email')
 		return (req, res, next)->
@@ -74,11 +74,32 @@ module.exports = (config)->
 			settings = config.email.templates[templateName]
 
 			getEmailString req.sessionUser, settings, id, (email)->
+				lines = email.split("\n")
+				subject = lines.shift()
+				email = lines.join("\n")
 				res.send(email)
 			return
+		if req._parsedUrl.path.substr(0, 9) is "/sendmail"
+			console.log("MATCH")
+			parts = req._parsedUrl.path.split("/")
+			if parts.length < 5
+				res.send(404, "Not Found (Parts Length = #{parts.length})")
+				return
 
+			templateName = parts[2]
+			id = parts[3]
+			recipient = parts[4]
 
+			if not config.email.templates.hasOwnProperty(templateName)
+				res.send(404, "Template '#{templateName}' Not Found")
+				return
 
+			settings = config.email.templates[templateName]
+
+			getEmailString req.sessionUser, settings, id, (email)->
+				req.sessionUser.group.sendEmail(recipient, email)
+				res.send("Done")
+			return
 		next()
 	return fn
 

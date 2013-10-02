@@ -72,6 +72,23 @@ class GroupSession
           @emitDelete(entity, id)
           callback(null)
 
+  sendEmail: (address, content)->
+
+    lines = content.split("\n")
+    subject = lines.shift()
+    content = lines.join("\n")
+
+    mailOptions =
+      from: @config.email.from,
+      to: address
+      subject: subject
+      text: ""
+      html: content
+    @smtpTransport.sendMail mailOptions, (error, response)->
+      if(error)
+          console.log(error);
+      else
+         console.log("Message sent: " + response.message)
 
   addHistory: (user, action, collectionName, entity_id, changeset, identity)=>
     console.log "ADDED HISTORY"
@@ -95,18 +112,7 @@ class GroupSession
                 else
                   o = {}
               recipient = o
-              mailOptions =
-                from: @config.email.from,
-                to: recipient
-                subject: "Hello"
-                text: ""
-                html: email
-              @smtpTransport.sendMail mailOptions, (error, response)->
-                if(error)
-                    console.log(error);
-                else
-                    console.log("Message sent: " + response.message)
-
+              @sendEmail(recipient, email)
 
     @db.getCollection "history", (err, collection)=>
       if err
