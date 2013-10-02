@@ -98,6 +98,16 @@ class Collection
             setFields[k] = val
             promise.resolve()
 
+    for k,v of @tableDef.fields
+      if v.hasOwnProperty("onCreate")
+        onCreate = v.onCreate
+        if onCreate.substring(0, 1) is "#"
+          fv = onCreate.substring(1)
+          if context.hasOwnProperty(fv)
+            setFields[k] = context[fv]
+        else
+          setFields[onCreate]
+
     dfd.allOrNone(promises).then ()=>
       query = "INSERT INTO #{@tableName} SET ?"
       @log(query)
