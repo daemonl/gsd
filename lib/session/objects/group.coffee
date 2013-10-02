@@ -1,5 +1,11 @@
 PathParser = require('../path_parser')
 
+getEmailString = require("../../middleware/email").getEmailString
+
+nodemailer = require("nodemailer")
+
+# create reusable transport method (opens pool of SMTP connections)
+
 
 class GroupSession
 
@@ -7,6 +13,7 @@ class GroupSession
 
   constructor: (@config, @serialized, @db)->
     @pathParser = new PathParser(@config.model)
+    @smtpTransport = nodemailer.createTransport("SMTP", @config.email.transport) 
     return @
 
   addUser: (user)=>
@@ -68,6 +75,38 @@ class GroupSession
 
   addHistory: (user, action, collectionName, entity_id, changeset, identity)=>
     console.log "ADDED HISTORY"
+
+    if @config.hasOwnProperty('email')
+      if @config.email.hasOwnProperty('hooks')
+        for hook in @config.email.hooks
+          console.log(hook)
+          console.log(changeset)
+          console.log(action)
+          if (hook.collection is collectionName and
+          (hook.triggerType is null or hook.triggerType is action) and
+          (hook.triggerField is null or changeset.hasOwnProperty(hook.triggerField)))
+            template = @config.email.templates[hook.template]
+            getEmailString user, template, entity_id, (email, data)=>
+              dp = hook.recipient.split(".")
+              o = data
+              for p in dp
+                if o.hasOwnProperty(p)
+                  o = o[p]
+                else
+                  o = {}
+              recipient = o
+              mailOptions =
+                from: @config.email.from,
+                to: recipient
+                subject: "Hello"
+                text: ""
+                html: email
+              @smtpTransport.sendMail mailOptions, (error, response)->
+                if(error)
+                    console.log(error);
+                else
+                    console.log("Message sent: " + response.message)
+
 
     @db.getCollection "history", (err, collection)=>
       if err

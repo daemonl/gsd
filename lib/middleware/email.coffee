@@ -2,11 +2,11 @@ dfd = require("node-promise")
 fs = require("fs")
 nunjucks = require('nunjucks')
 
+nenv = null
 
 expand = (flatArray)->
 	o = {}
 	for k,v of flatArray
-	
 		parts = k.split(".")
 		current = o
 		lastPart = parts.pop()
@@ -20,7 +20,34 @@ expand = (flatArray)->
 		current[lastPart] = v
 	return o
 
+getEmailString = (user, settings, id, callback)->
+	promises = []
+	parameters = {}
+	pFocus = new dfd.Promise()
+	promises.push(pFocus)
+	user.get settings.collection, id, "email", (err, f)->
+		parameters[settings.collection] = expand(f)
+		pFocus.resolve()
 
+	if settings.hasOwnProperty("queries")
+		for name, options of settings.queries
+			pQuery = new dfd.Promise()
+			promises.push(pQuery)
+			do (pQuery, name, options)->
+				filter = {}
+				for k, v of options.filter
+					if v is "#id"
+						v = id
+					filter[k] = v
+					
+				user.list options.collection, {filter: filter, fieldset: "email"}, (err, list)->
+					parameters[name] = list
+					pQuery.resolve()
+
+	dfd.allOrNone(promises).then ()->
+		tpl = nenv.getTemplate(settings.templateFile + ".swig.html")
+		callback(tpl.render(parameters), parameters)
+		
 
 module.exports = (config)->
 	if not config.hasOwnProperty('email')
@@ -28,7 +55,6 @@ module.exports = (config)->
 			next()
 	nenv = new nunjucks.Environment(new nunjucks.FileSystemLoader(config.email.templateDir))
 	fn = (req, res, next)->
-	
 		# /emailpreview/service_call/4
 		#req._parsedUrl.path.substr(0,6) is "/email"
 		if req._parsedUrl.path.substr(0,13) is "/emailpreview"
@@ -47,46 +73,13 @@ module.exports = (config)->
 
 			settings = config.email.templates[templateName]
 
-			promises = []
-			parameters = {}
-			pFocus = new dfd.Promise()
-			promises.push(pFocus)
-			req.sessionUser.get settings.collection, id, "email", (err, f)->
-				parameters[settings.collection] = expand(f)
-				pFocus.resolve()
-
-			if settings.hasOwnProperty("queries")
-				for name, options of settings.queries
-					#"service_call_notes": {
-					#	"collection": "service_call_note",
-					#	"filter": {"service_call.id": "#id"}
-					#}
-					pQuery = new dfd.Promise()
-					promises.push(pQuery)
-					do (pQuery, name, options)->
-						filter = {}
-						for k, v of options.filter
-							if v is "#id"
-								v = id
-							filter[k] = v
-
-						req.sessionUser.list options.collection, {filter: filter, fieldset: "email"}, (err, list)->
-							parameters[name] = list
-							pQuery.resolve()
-
-
-			dfd.allOrNone(promises).then ()->
-				console.log(parameters)
-				tpl = nenv.getTemplate(templateName + ".swig.html")
-				res.send(tpl.render(parameters))
-
-
-
-
-
+			getEmailString req.sessionUser, settings, id, (email)->
+				res.send(email)
 			return
 
 
 
 		next()
 	return fn
+
+module.exports.getEmailString = getEmailString

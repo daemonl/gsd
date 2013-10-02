@@ -58,12 +58,12 @@ class Query
     switch type
       when "normal" then return @walkFieldNormal(baseTable, prefixPath, pathString)
       when "aggregate" then return @walkFieldAggregate(baseTable, prefixPath, fieldDefRaw)
+      when "totalduration" then return @walkFieldTotalDuration(baseTable, prefixPath, fieldDefRaw)
     return "Field Type not valid"
 
 
   walkFieldAggregate: (baseTable, prefixPath, fieldDef)=>
   
-    
     path = fieldDef.path.split(".")
 
     linkBaseTable = baseTable
@@ -88,6 +88,33 @@ class Query
     @selectFields.push("#{fieldDef.ag_type}(#{collectionAlias}.#{fieldName}) AS #{fieldAlias}")
     null
 
+
+  walkFieldTotalDuration: (baseTable, prefixPath, fieldDef)=>
+      
+    path = fieldDef.path.split(".")
+
+    linkBaseTable = baseTable
+    while baseTable.def.fields.hasOwnProperty(path[0])
+      # This isn't the backref
+      
+      linkBaseTable = @walkFieldUtil_IncTable(baseTable, prefixPath, path)
+    
+    collectionName = path[0]
+    collectionDef = @getCollectionDef(collectionName)
+    collectionAlias = @includeCollection(collectionName, collectionName)
+
+    collectionRef = baseTable.def.name
+    linkBasePk = linkBaseTable.def.pk or "id"
+    
+    @joins.push "LEFT JOIN #{collectionDef.name} #{collectionAlias} on #{collectionAlias}.#{collectionRef} = #{linkBaseTable.alias}.#{linkBasePk} "
+
+    #fieldName = path[1]
+    startFieldDef = collectionDef.fields[fieldDef.start]
+    #TODO: Make recursive AFTER backjoining.
+    fieldAlias = @includeField(prefixPath.concat(path).join("."), startFieldDef, collectionAlias)
+ 
+    @selectFields.push("SUM(#{collectionAlias}.#{fieldDef.stop} - #{collectionAlias}.#{fieldDef.start}) AS #{fieldAlias}")
+    null
 
 
 
@@ -410,8 +437,10 @@ class Query
   makePageString: (conditions, callback)=>
     str = ""
     limit = false
+    console.log(conditions)
     
     if conditions.hasOwnProperty("sort")
+      console.log("SORT")
       sorts = []
       for sort in conditions.sort
         if sort.direction and sort.direction is -1
@@ -430,6 +459,7 @@ class Query
 
         sorts.push("#{col} #{direction}")
       if sorts.length
+        console.log("SORTS: #{sorts.join(",")}")
         str += "ORDER BY #{sorts.join(", ")}"
 
     if conditions.hasOwnProperty("limit")

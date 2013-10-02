@@ -86,6 +86,9 @@ getDefForField = (field)->
   if field.type is 'int'
     return "INT(11) UNSIGNED"
 
+  if field.type is 'float'
+    return "FLOAT"
+
   if field.type is 'auto_timestamp'
     return "TIMESTAMP"
 

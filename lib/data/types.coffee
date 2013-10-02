@@ -23,6 +23,18 @@ baseTypes.int =
       return callback(null, null) if val is null or val is undefined or val.length < 1
       return callback(null, val/1)
 
+baseTypes.float =
+  toDb: (val, callback)->
+    process.nextTick ()->
+      if val is null or val is undefined or val.length < 1
+        return callback(null, null)
+      return callback(null, val/1)
+    
+  fromDb: (val, callback)->
+    process.nextTick ()->
+      return callback(null, null) if val is null or val is undefined or val.length < 1
+      return callback(null, val/1)
+
 baseTypes.datetime =
   toDb: (val, callback)->
     process.nextTick ()->
@@ -86,6 +98,7 @@ dataTypes = {
   gid: baseTypes.base
   id: baseTypes.int
   int: baseTypes.int
+  float: baseTypes.float
   ref: baseTypes.int
   datetime: baseTypes.datetime
   date: baseTypes.date
