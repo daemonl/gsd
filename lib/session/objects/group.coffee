@@ -13,7 +13,9 @@ class GroupSession
 
   constructor: (@config, @serialized, @db)->
     @pathParser = new PathParser(@config.model)
-    @smtpTransport = nodemailer.createTransport("SMTP", @config.email.transport) 
+    @smtpTransport = false
+    if @config.hasOwnProperty('email')
+      @smtpTransport = nodemailer.createTransport("SMTP", @config.email.transport)
     return @
 
   addUser: (user)=>
@@ -73,6 +75,8 @@ class GroupSession
           callback(null)
 
   sendEmail: (address, content)->
+
+    return if !smtpTransport
 
     lines = content.split("\n")
     subject = lines.shift()
