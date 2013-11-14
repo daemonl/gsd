@@ -22,14 +22,13 @@ class UserSession
     socket.on 'delete', @delete
     socket.on 'do', @do
     socket.on 'heartbeat', ()=>
-
-
       @session.last = new Moment().format("YYYY-MM-DDTHH:mm:ss")
       changeset =
         last: @session.last
       @group.db.update @config.security.sessionTable, {fieldset: 'application', id: @session.id}, changeset, (err, res)=>
         console.log(err) if err
         console.log("Saved Session #{@serialized.username}")
+    socket.emit 'whoami', @serialized
 
 
 

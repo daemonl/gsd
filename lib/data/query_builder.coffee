@@ -271,6 +271,22 @@ class Query
         callback(null, builder.context.group)
       return
     
+    if typeof input.sort is "function"
+      allVals = []
+      promises = []
+      uv = @userValue
+      for v in input
+        do (v)->
+          promise = new dfd.Promise()
+          promises.push(promise)
+          uv v, type, (err, escaped)->
+            allVals.push escaped
+            promise.resolve()            
+
+      dfd.allOrNone(promises).then ()->
+        callback(null, "(" + allVals.join() + ")")
+      return
+
     if type isnt null
       #process.nextTick ()->
       #  callback(null, builder.mysql.escape( type.toDb(input) ) )
@@ -343,7 +359,7 @@ class Query
           builder.userValue cond.val, null, (err, escaped)->
             return promise.reject(err) if err
             cmp = cond.cmp || "="
-            if cmp not in ["=", "!=", "<", "<=", ">", ">=", "IS", "LIKE"]
+            if cmp not in ["=", "!=", "<", "<=", ">", ">=", "IS", "LIKE", "IN"]
               cmp = "="
 
             # cmp and val are now query-safe, but not field

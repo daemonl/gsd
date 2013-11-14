@@ -87,6 +87,7 @@ class Server
     @app.use directRender(@config.directRenderPaths)
     @app.use require('./middleware/files')(@config)
     @app.use require('./middleware/email')(@config)
+    @app.use require('./middleware/csv')(@config)
 
 
   start: ()=>
