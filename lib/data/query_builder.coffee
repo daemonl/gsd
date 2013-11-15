@@ -345,9 +345,11 @@ class Query
 
     pk = @tableDef.pk or "id"
 
+    if not conditions.hasOwnProperty 'where'
+      conditions.where = []
+
     if conditions.hasOwnProperty('pk')
-      if not conditions.hasOwnProperty 'where'
-        conditions.where = []
+
       conditions.where.push({field: pk, cmp: "=", val: conditions.pk})
 
     # WHERE are simple query conditions
