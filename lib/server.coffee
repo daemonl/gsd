@@ -7,14 +7,14 @@ nenv = null
 class Server
   helperFunctions = (req, res, next)=>
 
-    origEnd = res.end
+    res.origEnd =res.end
 
     res.end = (content = null)->
       if req.hasOwnProperty('saveSession')
         req.saveSession ()->
-          origEnd(content)
+          res.origEnd(content)
       else
-        origEnd(content)
+        res.origEnd(content)
 
     res.redirect = (url)->
       res.statusCode = 302
