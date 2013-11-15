@@ -346,29 +346,29 @@ class Query
     pk = @tableDef.pk or "id"
 
     if conditions.hasOwnProperty('pk')
-      if not conditions.hasOwnProperty('where')
+      if not conditions.hasOwnProperty 'where'
         conditions.where = []
       conditions.where.push({field: pk, cmp: "=", val: conditions.pk})
 
     # WHERE are simple query conditions
-    if conditions.hasOwnProperty('where')
-      for cond in conditions.where
-        do (cond)->
-          promise = new dfd.Promise()
-          wherePromises.push(promise)
-          builder.userValue cond.val, null, (err, escaped)->
-            return promise.reject(err) if err
-            cmp = cond.cmp || "="
-            if cmp not in ["=", "!=", "<", "<=", ">", ">=", "IS", "LIKE", "IN"]
-              cmp = "="
 
-            # cmp and val are now query-safe, but not field
-            # Field will not be directly included, it will be checked against the map
-        
-            promise.resolve
-              field: cond.field
-              val: escaped
-              cmp: cmp
+    for cond in conditions.where
+      do (cond)->
+        promise = new dfd.Promise()
+        wherePromises.push(promise)
+        builder.userValue cond.val, null, (err, escaped)->
+          return promise.reject(err) if err
+          cmp = cond.cmp || "="
+          if cmp not in ["=", "!=", "<", "<=", ">", ">=", "IS", "LIKE", "IN"]
+            cmp = "="
+
+          # cmp and val are now query-safe, but not field
+          # Field will not be directly included, it will be checked against the map
+      
+          promise.resolve
+            field: cond.field
+            val: escaped
+            cmp: cmp
 
     if conditions.hasOwnProperty('filter')
       for fieldName, v of conditions.filter

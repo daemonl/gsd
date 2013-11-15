@@ -23,6 +23,7 @@ expand = (flatArray)->
 getEmailString = (user, settings, id, callback)->
 	promises = []
 	parameters = {}
+	parameters.user = user.serialized
 	pFocus = new dfd.Promise()
 	promises.push(pFocus)
 	user.get settings.collection, id, "email", (err, f)->
@@ -40,7 +41,7 @@ getEmailString = (user, settings, id, callback)->
 						v = id
 					filter[k] = v
 					
-				user.list options.collection, {filter: filter, fieldset: "email"}, (err, list)->
+				user.list options.collection, {filter: filter, fieldset: "email", where: options.where}, (err, list)->
 					parameters[name] = list
 					pQuery.resolve()
 
@@ -58,7 +59,6 @@ module.exports = (config)->
 		# /emailpreview/service_call/4
 		#req._parsedUrl.path.substr(0,6) is "/email"
 		if req._parsedUrl.path.substr(0,13) is "/emailpreview"
-			console.log("MATCH")
 			parts = req._parsedUrl.path.split("/")
 			if parts.length < 4
 				res.send(404, "Not Found (Parts Length = #{parts.length})")
@@ -82,13 +82,14 @@ module.exports = (config)->
 		if req._parsedUrl.path.substr(0, 9) is "/sendmail"
 			console.log("MATCH")
 			parts = req._parsedUrl.path.split("/")
-			if parts.length < 5
+			if parts.length < 6
 				res.send(404, "Not Found (Parts Length = #{parts.length})")
 				return
 
 			templateName = parts[2]
 			id = parts[3]
 			recipient = parts[4]
+			notes = decodeURIComponent(parts[5])
 
 			if not config.email.templates.hasOwnProperty(templateName)
 				res.send(404, "Template '#{templateName}' Not Found")
@@ -97,6 +98,7 @@ module.exports = (config)->
 			settings = config.email.templates[templateName]
 
 			getEmailString req.sessionUser, settings, id, (email)->
+				email = email.replace("--- NOTES HERE ---", notes)
 				req.sessionUser.group.sendEmail(recipient, email)
 				res.send("Done")
 			return

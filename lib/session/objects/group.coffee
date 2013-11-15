@@ -76,7 +76,7 @@ class GroupSession
 
   sendEmail: (address, content)->
 
-    return if !smtpTransport
+    return if !@smtpTransport
 
     lines = content.split("\n")
     subject = lines.shift()
