@@ -271,7 +271,7 @@ class Query
         callback(null, builder.context.group)
       return
     
-    if input != null and input != undefined and typeof input is "object" and typeof input.sort is "function"
+    if type != null and type.allowArray and input != null and input != undefined and typeof input is "object" and typeof input.sort is "function"
       allVals = []
       promises = []
       uv = @userValue

@@ -40,6 +40,8 @@ class Collection
   update: (context, conditions, fieldsToUpdate, callback)=>
 
     fieldset = "form"
+    if @tableDef.fieldsets.hasOwnProperty('edit')
+      fieldset = "edit"
     if conditions.hasOwnProperty('fieldset')
       fieldset = conditions.fieldset
     try

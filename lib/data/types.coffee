@@ -113,4 +113,6 @@ dataTypes = {
   markdown: baseTypes.base
 }
 
+dataTypes.enum.allowArray = true
+
 module.exports = dataTypes
