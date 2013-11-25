@@ -26,6 +26,17 @@ class GroupSession
       user: user.serialized.id
       group: @serialized.id
  
+  custom: (user, query, parameters, callback)=>
+    if not @config.hasOwnProperty("customQueries")
+      return callback("No custom queries have been provided", null)
+    if not @config.customQueries.hasOwnProperty(query)
+      return callback("No custom query matched", null)
+    query = @config.customQueries[query]
+    @db.customQuery(query, parameters, callback)
+
+      
+
+
   get: (user, entity, id, fieldset, callback)=>
     context = @getContext(user)
     @db.getCollection entity, (err, collection)->

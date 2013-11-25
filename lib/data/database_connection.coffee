@@ -52,6 +52,14 @@ class DatabaseConnection
       db.query query, params, (err, res)->
         callback(err, res)
 
+  customQuery: (query, params, callback)=>
+    console.log("CUSTOM QUERY", query)
+    console.log("PARAMS", params)
+  
+    @query query.query, params, (err, res)->
+      callback(err, res)
+
+
   update: (collectionName, conditions, entitySerialized, callback)=>
     @getCollection collectionName, (err, collection)=>
       return callback(err) if err
@@ -95,11 +103,6 @@ class DatabaseConnection
           return callback(err)
         rStrings.push(esc)
         next()
-
-
-
-
-
 
 
 

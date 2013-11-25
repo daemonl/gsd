@@ -21,6 +21,7 @@ class UserSession
     socket.on 'create', @create_new
     socket.on 'delete', @delete
     socket.on 'do', @do
+    socket.on 'custom', @custom
     socket.on 'heartbeat', ()=>
       @session.last = new Moment().format("YYYY-MM-DDTHH:mm:ss")
       changeset =
@@ -32,6 +33,10 @@ class UserSession
 
 
 
+  custom: (name, parameters, callback)=>
+    @group.custom @, name, parameters, (err, result)->
+      callback(err, result)
+      
   get: (collection, id, fieldset, callback)=>
     console.log("#{@serialized.username} get", collection, fieldset, id)
     try
