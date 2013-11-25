@@ -18,7 +18,7 @@
     "socket.io": "*",
     "socket.io-client": "*",
     "nunjucks": "*",
-    "node-promise": "*",
+    "node-promise": "git://github.com/daemonl/node-promise.git#master",
     "mysql": "*",
     "moment": "*",
     "scrypt": "*",

@@ -412,6 +412,7 @@ class Query
        
               for termPart in termParts
                 do (termPart)->
+                  return if termPart.length < 1
                   tpPromise = new dfd.Promise()
                   searchGroupPromises.push(tpPromise)
                   partGroup = []

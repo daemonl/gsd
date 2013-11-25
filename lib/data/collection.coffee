@@ -203,7 +203,7 @@ class Collection
         fieldset = 'table'
       else
         fieldset = 'identity'
-      collection.find(context, {fieldset: fieldset, search: {"*": search}}, callback)
+      collection.find(context, {fieldset: fieldset, search: {"*": search}, limit: 10}, callback)
 
 
 module.exports = Collection
