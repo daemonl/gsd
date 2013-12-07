@@ -30,7 +30,7 @@ getDefForField = (field)->
     return "VARCHAR(#{opt.length}) #{nullPart}"
   if field.type is 'password'
     def = {
-      length: 255
+      length: 512
       nullable: true
     }
     opt = optionsWithDefaults def, field
@@ -88,6 +88,9 @@ getDefForField = (field)->
 
   if field.type is 'float'
     return "FLOAT"
+    
+  if field.type is 'bool'
+    return "TINYINT"
 
   if field.type is 'auto_timestamp'
     return "TIMESTAMP"
